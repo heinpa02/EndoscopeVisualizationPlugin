@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>222</width>
-    <height>161</height>
+    <width>380</width>
+    <height>563</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -26,17 +26,96 @@
       <string notr="true">QLabel { color: rgb(255, 0, 0) }</string>
      </property>
      <property name="text">
-      <string>Please select an image!</string>
+      <string>Please select a tracker!</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="buttonPerformImageProcessing">
-     <property name="toolTip">
-      <string>Do image processing</string>
+    <widget class="QmitkNavigationDataSourceSelectionWidget" name="widget" native="true"/>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="InterpoaltionSelection">
+     <property name="enabled">
+      <bool>true</bool>
      </property>
+     <property name="title">
+      <string>InterpolationSelection</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QRadioButton" name="Interpol1">
+        <property name="text">
+         <string>Interpol1</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="Interpol2">
+        <property name="text">
+         <string>Interpol2</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="Interpol3">
+        <property name="text">
+         <string>Interpol3</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="Interpol4">
+        <property name="text">
+         <string>Interpol4</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="Interpol5">
+        <property name="text">
+         <string>Interpol5</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="TubeDiameterSelection">
+     <property name="title">
+      <string>TubeDiameterSelection</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="1">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>cm diameter</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QSpinBox" name="spinBoxTubeDiameter">
+        <property name="minimum">
+         <number>8</number>
+        </property>
+        <property name="maximum">
+         <number>12</number>
+        </property>
+        <property name="singleStep">
+         <number>1</number>
+        </property>
+        <property name="value">
+         <number>10</number>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="buttonPerformImageProcessing">
      <property name="text">
-      <string>Do Something</string>
+      <string>Visualize</string>
      </property>
     </widget>
    </item>
@@ -59,6 +138,14 @@
   </layout>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>QmitkNavigationDataSourceSelectionWidget</class>
+   <extends>QWidget</extends>
+   <header>qmitknavigationdatasourceselectionwidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
