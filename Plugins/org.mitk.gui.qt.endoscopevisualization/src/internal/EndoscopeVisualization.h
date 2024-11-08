@@ -43,17 +43,25 @@ public:
 
 protected:
   virtual void CreateQtPartControl(QWidget *parent) override;
-
   virtual void SetFocus() override;
 
   /// \brief called by QmitkFunctionality when DataManager's selection has changed
-  virtual void OnSelectionChanged(berry::IWorkbenchPart::Pointer source,
-                                  const QList<mitk::DataNode::Pointer> &nodes) override;
+  virtual void OnSelectionChanged(berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer> &nodes) override;
 
   /// \brief Called when the user clicks the GUI button
   void DoImageProcessing();
 
+  void OnInterpolationSelected();
+
+  void OnTubeDiameterChanged(int tubediameter);
+
   Ui::EndoscopeVisualizationControls m_Controls;
+
+
+
+  
+
+
 };
 
 #endif // EndoscopeVisualization_h

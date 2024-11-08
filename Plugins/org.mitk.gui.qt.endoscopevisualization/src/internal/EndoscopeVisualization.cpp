@@ -28,6 +28,12 @@ See LICENSE.txt or http://www.mitk.org for details.
 // mitk image
 #include <mitkImage.h>
 
+// GUI
+#include "ui_EndoscopeVisualizationControls.h"
+
+//DataSourceSelectionWidget
+#include "QmitkNavigationDataSourceSelectionWidget.h"
+
 const std::string EndoscopeVisualization::VIEW_ID = "org.mitk.views.endoscopevisualization";
 
 void EndoscopeVisualization::SetFocus()
@@ -39,7 +45,23 @@ void EndoscopeVisualization::CreateQtPartControl(QWidget *parent)
 {
   // create GUI widgets from the Qt Designer's .ui file
   m_Controls.setupUi(parent);
+  
+  // Visualize button
   connect(m_Controls.buttonPerformImageProcessing, &QPushButton::clicked, this, &EndoscopeVisualization::DoImageProcessing);
+
+  // NavigationDataSourceSelectionWidget
+  connect(m_Controls.widget, SIGNAL(NavigationDataSourceSelected(mitk::NavigationDataSource::Pointer)), this, SLOT(OnSetupNavigation()));
+
+  // InterpolationSelection radiobuttons
+  connect(m_Controls.Interpol1, &QRadioButton::clicked, this, &EndoscopeVisualization::OnInterpolationSelected);
+  connect(m_Controls.Interpol2, &QRadioButton::clicked, this, &EndoscopeVisualization::OnInterpolationSelected);
+  connect(m_Controls.Interpol3, &QRadioButton::clicked, this, &EndoscopeVisualization::OnInterpolationSelected);
+  connect(m_Controls.Interpol4, &QRadioButton::clicked, this, &EndoscopeVisualization::OnInterpolationSelected);
+  connect(m_Controls.Interpol5, &QRadioButton::clicked, this, &EndoscopeVisualization::OnInterpolationSelected);
+
+  // TubeDiameterSelection spinbox
+  connect(m_Controls.spinBoxTubeDiameter, QOverload<int>::of(&QSpinBox::valueChanged), this, &EndoscopeVisualization::OnTubeDiameterChanged);
+
 }
 
 void EndoscopeVisualization::OnSelectionChanged(berry::IWorkbenchPart::Pointer /*source*/,
@@ -99,4 +121,13 @@ void EndoscopeVisualization::DoImageProcessing()
       // actually do something here...
     }
   }
+}
+
+
+void EndoscopeVisualization::OnInterpolationSelected() {
+  MITK_INFO << "Interpolation";
+}
+
+void EndoscopeVisualization::OnTubeDiameterChanged(int tubediameter) {
+  MITK_INFO << "Durchmesser";
 }
