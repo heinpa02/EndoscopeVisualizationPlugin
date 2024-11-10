@@ -113,9 +113,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="buttonStartVisualization">
+     <property name="text">
+      <string>StartVisualization</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QPushButton" name="buttonPerformImageProcessing">
      <property name="text">
-      <string>Visualize</string>
+      <string>DoImageProcessing</string>
      </property>
     </widget>
    </item>

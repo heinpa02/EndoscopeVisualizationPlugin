@@ -24,6 +24,29 @@ See LICENSE.txt or http://www.mitk.org for details.
 
 #include "ui_EndoscopeVisualizationControls.h"
 
+
+//TEST
+#include <mitkNavigationDataToPointSetFilter.h>
+#include <mitkNavigationDataLandmarkTransformFilter.h>
+#include <mitkNavigationDataReferenceTransformFilter.h>
+#include <mitkNavigationDataObjectVisualizationFilter.h>
+#include <mitkNavigationDataToPointSetFilter.h>
+#include <mitkTrackingDeviceSource.h>
+#include <mitkSurface.h>
+#include <mitkCameraVisualization.h>
+
+#include <QToolBox>
+#include <QCheckBox>
+#include <QComboBox>
+#include <QPushButton>
+#include <QLabel>
+#include <QSpinBox>
+#include <QTimer>
+
+#include <vtkLandmarkTransform.h>
+#include <vtkSmartPointer.h>
+//
+
 /**
   \brief EndoscopeVisualization
 
@@ -39,28 +62,37 @@ class EndoscopeVisualization : public QmitkAbstractView
   Q_OBJECT
 
 public:
-  static const std::string VIEW_ID;
+  
+    static const std::string VIEW_ID;
+
+  EndoscopeVisualization(); //constructor
+
+  ~EndoscopeVisualization(); //destructor
+
 
 protected:
+  
   virtual void CreateQtPartControl(QWidget *parent) override;
+
   virtual void SetFocus() override;
-
-  /// \brief called by QmitkFunctionality when DataManager's selection has changed
-  virtual void OnSelectionChanged(berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer> &nodes) override;
-
-  /// \brief Called when the user clicks the GUI button
-  void DoImageProcessing();
-
-  void OnInterpolationSelected();
-
-  void OnTubeDiameterChanged(int tubediameter);
 
   Ui::EndoscopeVisualizationControls m_Controls;
 
+  void InterpolationSelected();
 
+  void TubeDiameterChanged(int tubediameter);
 
-  
+  void VisualizeEndoscope();
 
+  mitk::TrackingDeviceSource::Pointer m_Source;                       // connected Tracking Device
+  mitk::DataStorage *datastorage;                                     // data storage that contains the navigation data
+  // std::vector<mitk::NavigationData::Pointer> m_SensorDataList;     // list containing the navigation data of all 6 sensors
+
+  QTimer *m_Timer;                                                    // Timer to update the tracking data
+
+  void SetupNavigation(); 
+
+  void UpdateTrackingData();
 
 };
 
