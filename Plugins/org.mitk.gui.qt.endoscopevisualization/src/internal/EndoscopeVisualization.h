@@ -79,20 +79,32 @@ protected:
   Ui::EndoscopeVisualizationControls m_Controls;
 
   void InterpolationSelected();
+  void PerformInterpolation(int interpolationType);
 
   void TubeDiameterChanged(int tubediameter);
+  void PerformTube();
 
   void VisualizeEndoscope();
 
   mitk::TrackingDeviceSource::Pointer m_Source;                       // connected Tracking Device
   mitk::DataStorage *datastorage;                                     // data storage that contains the navigation data
-  // std::vector<mitk::NavigationData::Pointer> m_SensorDataList;     // list containing the navigation data of all 6 sensors
+  std::vector<mitk::NavigationData::Pointer> m_SensorDataList;        // list containing the navigation data of all 6 sensors
+  mitk::NavigationData::Pointer m_NavigationDataSensor;
+
+  int m_selectedtubediameter;
+  int m_selectedInterpolationType=1;
 
   QTimer *m_Timer;                                                    // Timer to update the tracking data
 
   void SetupNavigation(); 
 
   void UpdateTrackingData();
+
+  void PerformInterpolation1();
+  void PerformInterpolation2();
+  void PerformInterpolation3();
+  void PerformInterpolation4();
+  void PerformInterpolation5();
 
 };
 

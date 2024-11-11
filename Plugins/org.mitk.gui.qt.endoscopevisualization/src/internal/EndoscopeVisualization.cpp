@@ -113,22 +113,27 @@ void EndoscopeVisualization::InterpolationSelected()
   if (m_Controls.Interpol1->isChecked())
   {
     MITK_INFO << "Interpolation 1";
+    m_selectedInterpolationType = 1;
   }
   else if (m_Controls.Interpol2->isChecked())
   {
     MITK_INFO << "Interpolation 2 ";
+    m_selectedInterpolationType = 2;
   }
   else if (m_Controls.Interpol3->isChecked())
   {
     MITK_INFO << "Interpolation 3 ";
+    m_selectedInterpolationType = 3;
   }
   else if (m_Controls.Interpol4->isChecked())
   {
     MITK_INFO << "Interpolation 4 ";
+    m_selectedInterpolationType = 4;
   }
   else if (m_Controls.Interpol5->isChecked())
   {
     MITK_INFO << "Interpolation 5 ";
+    m_selectedInterpolationType = 5;
   }
 }
 
@@ -136,6 +141,7 @@ void EndoscopeVisualization::InterpolationSelected()
 
 void EndoscopeVisualization::TubeDiameterChanged(int tubediameter) {
   MITK_INFO << "Durchmesser= " << tubediameter;
+  m_selectedtubediameter = tubediameter;
 }
 
 
@@ -144,40 +150,95 @@ void EndoscopeVisualization::SetupNavigation()
 {
   if (m_Source.IsNotNull())
     if (m_Source->IsTracking())
-      return;
-    MITK_INFO << "Please start Tracking first.";
-  MITK_INFO << "Please select a Tracking Device first.";
+      if (m_Controls.widget->GetSelectedToolID() != -1)
+        return;
+      MITK_ERROR << "Please select the last detected tool.";
+    MITK_INFO << "Please start tracking.";
+  MITK_INFO << "Please select a tracking device.";
 }
 
 
 
 void EndoscopeVisualization::UpdateTrackingData()
 {
-  MITK_INFO << "UpdateTrackingData wird erreicht.";
-
-  // Get all data nodes in the data storage
-  mitk::DataStorage::SetOfObjects::ConstPointer allNodes = datastorage->GetAll();
-
-  // Iterate through all data nodes and check for navigation data
-  for (auto node : *allNodes)
+  MITK_INFO << "Update trackingdata";
+  
+  for (size_t i = 0; i <= m_Controls.widget->GetSelectedToolID(); ++i)
   {
-    if (node.IsNotNull())
-    {
-      // Attempt to cast the node data to NavigationData
-      mitk::NavigationData::Pointer navigationData = dynamic_cast<mitk::NavigationData *>(node->GetData());
+    m_NavigationDataSensor = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(i);
+    mitk::Point3D position = m_NavigationDataSensor->GetPosition();
+    mitk::Quaternion orientation = m_NavigationDataSensor->GetOrientation();
+    MITK_INFO << "Sensor: " << m_NavigationDataSensor->GetName() << " Position: " << position << " Orientation: " << orientation;
 
-      // If the node contains valid navigation data, process it
-      if (navigationData.IsNotNull())
-      {
-        // Extract position and orientation from the navigation data
-        mitk::Point3D position = navigationData->GetPosition();
-        mitk::Quaternion orientation = navigationData->GetOrientation();
-
-        // Example: Print out the extracted data for each sensor
-        MITK_INFO << "Sensor: " << node->GetName() << " Position: " << position << " Orientation: " << orientation;
-
-        // m_SensorDataList.push_back(navigationData);
-      }
-    }
+    m_SensorDataList.push_back(m_NavigationDataSensor);
   }
+
+  PerformInterpolation(m_selectedInterpolationType);
+  PerformTube();
+
+}
+
+
+void EndoscopeVisualization::PerformInterpolation(int interpolationType)
+{
+  switch (interpolationType)
+  {
+    case 1:
+      PerformInterpolation1();
+      break;
+    case 2:
+      PerformInterpolation2();
+      break;
+    case 3:
+      PerformInterpolation3();
+      break;
+    case 4:
+      PerformInterpolation4();
+      break;
+    case 5:
+      PerformInterpolation5();
+      break;
+  }
+}
+
+
+void EndoscopeVisualization::PerformInterpolation1()
+{
+  MITK_INFO << "Executing Interpolation 1...";
+  for (size_t i = 0; i <= m_Controls.widget->GetSelectedToolID(); ++i)
+  {
+    mitk::Point3D listposition = m_SensorDataList[i]->GetPosition();
+    mitk::Quaternion listorientation = m_SensorDataList[i]->GetOrientation();
+    MITK_INFO << " Position: " << listposition << " Orientation: " << listorientation;
+  }
+}
+
+void EndoscopeVisualization::PerformInterpolation2()
+{
+  MITK_INFO << "Executing Interpolation 2...";
+  // 
+}
+
+void EndoscopeVisualization::PerformInterpolation3()
+{
+  MITK_INFO << "Executing Interpolation 3...";
+  // 
+}
+
+void EndoscopeVisualization::PerformInterpolation4()
+{
+  MITK_INFO << "Executing Interpolation 4...";
+  // 
+}
+
+void EndoscopeVisualization::PerformInterpolation5()
+{
+  MITK_INFO << "Executing Interpolation 5...";
+  // 
+}
+  
+
+void EndoscopeVisualization::PerformTube() 
+{
+  MITK_INFO << "Tube in progress.";
 }
