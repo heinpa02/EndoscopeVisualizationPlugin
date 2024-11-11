@@ -78,6 +78,9 @@ protected:
 
   Ui::EndoscopeVisualizationControls m_Controls;
 
+  void CalculationSelected();
+  void PerformCalculation(int calculationType);
+
   void InterpolationSelected();
   void PerformInterpolation(int interpolationType);
 
@@ -91,14 +94,22 @@ protected:
   std::vector<mitk::NavigationData::Pointer> m_SensorDataList;        // list containing the navigation data of all 6 sensors
   mitk::NavigationData::Pointer m_NavigationDataSensor;
 
-  int m_selectedtubediameter;
+  int m_selectedCalculationType=1;
   int m_selectedInterpolationType=1;
+  int m_selectedtubediameter;
 
   QTimer *m_Timer;                                                    // Timer to update the tracking data
+
+
+  mitk::PointSet::Pointer splinepointset = mitk::PointSet::New();
 
   void SetupNavigation(); 
 
   void UpdateTrackingData();
+
+  void PerformCalculation1();
+  void PerformCalculation2();
+  void PerformCalculation3();
 
   void PerformInterpolation1();
   void PerformInterpolation2();

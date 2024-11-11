@@ -34,7 +34,37 @@
     <widget class="QmitkNavigationDataSourceSelectionWidget" name="widget" native="true"/>
    </item>
    <item>
-    <widget class="QGroupBox" name="InterpoaltionSelection">
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>NodeCalculation</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_3">
+      <item>
+       <widget class="QRadioButton" name="Cal1">
+        <property name="text">
+         <string>Calculation1</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="Cal2">
+        <property name="text">
+         <string>Calculation2</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="Cal3">
+        <property name="text">
+         <string>Calculation3</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="InterpolationSelection">
      <property name="enabled">
       <bool>true</bool>
      </property>
@@ -113,16 +143,9 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="buttonStartVisualization">
+    <widget class="QPushButton" name="buttonPerformEndoscopeVisualization">
      <property name="text">
-      <string>StartVisualization</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPushButton" name="buttonPerformImageProcessing">
-     <property name="text">
-      <string>DoImageProcessing</string>
+      <string>Visualize</string>
      </property>
     </widget>
    </item>

@@ -78,6 +78,12 @@ void EndoscopeVisualization::CreateQtPartControl(QWidget *parent)
   // NavigationDataSourceSelectionWidget
   connect(m_Controls.widget, SIGNAL(NavigationDataSourceSelected(mitk::NavigationDataSource::Pointer)), this, SLOT(SetupNavigation()));
 
+  // CalculationSelection radiobuttons
+  connect(m_Controls.Cal1, &QRadioButton::clicked, this, &EndoscopeVisualization::CalculationSelected);
+  connect(m_Controls.Cal2, &QRadioButton::clicked, this, &EndoscopeVisualization::CalculationSelected);
+  connect(m_Controls.Cal3, &QRadioButton::clicked, this, &EndoscopeVisualization::CalculationSelected);
+  m_Controls.Cal1->setChecked(true);
+
   // InterpolationSelection radiobuttons
   connect(m_Controls.Interpol1, &QRadioButton::clicked, this, &EndoscopeVisualization::InterpolationSelected);
   connect(m_Controls.Interpol2, &QRadioButton::clicked, this, &EndoscopeVisualization::InterpolationSelected);
@@ -95,6 +101,9 @@ void EndoscopeVisualization::CreateQtPartControl(QWidget *parent)
 void EndoscopeVisualization::VisualizeEndoscope()
 {
   MITK_INFO << "Erreicht VisualizeEndoscope.";
+
+  
+
   
   datastorage = this->GetDataStorage();
   if (datastorage == nullptr)
@@ -106,6 +115,25 @@ void EndoscopeVisualization::VisualizeEndoscope()
   m_Timer->start(1000);
 }
 
+
+void EndoscopeVisualization::CalculationSelected() 
+{
+  if (m_Controls.Cal1->isChecked())
+  {
+    MITK_INFO << "Calculation 1";
+    m_selectedCalculationType = 1;
+  }
+  else if (m_Controls.Cal2->isChecked())
+  {
+    MITK_INFO << "Calculation 2 ";
+    m_selectedCalculationType = 2;
+  }
+  else if (m_Controls.Cal3->isChecked())
+  {
+    MITK_INFO << "Calculation 3 ";
+    m_selectedCalculationType = 3;
+  }
+}
 
 
 void EndoscopeVisualization::InterpolationSelected()
@@ -173,9 +201,27 @@ void EndoscopeVisualization::UpdateTrackingData()
     m_SensorDataList.push_back(m_NavigationDataSensor);
   }
 
+  PerformCalculation(m_selectedCalculationType);
   PerformInterpolation(m_selectedInterpolationType);
   PerformTube();
 
+}
+
+
+void EndoscopeVisualization::PerformCalculation(int calculationType) 
+{
+  switch (calculationType)
+  {
+    case 1:
+      PerformCalculation1();
+      break;
+    case 2:
+      PerformCalculation2();
+      break;
+    case 3:
+      PerformCalculation3();
+      break;
+  }
 }
 
 
@@ -199,6 +245,27 @@ void EndoscopeVisualization::PerformInterpolation(int interpolationType)
       PerformInterpolation5();
       break;
   }
+}
+
+
+
+
+void EndoscopeVisualization::PerformCalculation1()
+{
+  MITK_INFO << "Executing Calculation 1...";
+  //
+}
+
+void EndoscopeVisualization::PerformCalculation2()
+{
+  MITK_INFO << "Executing Calculation 2...";
+  //
+}
+
+void EndoscopeVisualization::PerformCalculation3()
+{
+  MITK_INFO << "Executing Calculation 3...";
+  //
 }
 
 
