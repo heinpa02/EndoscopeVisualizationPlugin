@@ -76,46 +76,46 @@ protected:
 
   virtual void SetFocus() override;
 
-  Ui::EndoscopeVisualizationControls m_Controls;
+  Ui::EndoscopeVisualizationControls m_Controls;                            // Ui controls
+  mitk::TrackingDeviceSource::Pointer m_Source;                             // connected Tracking Device
+    
+  QTimer *m_Timer;                                                          // Timer to update the tracking data
 
-  void CalculationSelected();
-  void PerformCalculation(int calculationType);
+  mitk::DataStorage *datastorage;                                           // data storage that contains the navigation data
+  std::vector<mitk::NavigationData::Pointer> m_NavigationDataList;          // list containing the navigation data of the 6 sensors
+  
+  vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 
-  void InterpolationSelected();
-  void PerformInterpolation(int interpolationType);
-
-  void TubeDiameterChanged(int tubediameter);
-  void PerformTube();
-
-  void VisualizeEndoscope();
-
-  mitk::TrackingDeviceSource::Pointer m_Source;                       // connected Tracking Device
-  mitk::DataStorage *datastorage;                                     // data storage that contains the navigation data
-  std::vector<mitk::NavigationData::Pointer> m_SensorDataList;        // list containing the navigation data of all 6 sensors
-  mitk::NavigationData::Pointer m_NavigationDataSensor;
-
-  int m_selectedCalculationType=1;
-  int m_selectedInterpolationType=1;
-  int m_selectedtubediameter;
-
-  QTimer *m_Timer;                                                    // Timer to update the tracking data
+  vtkSmartPointer<vtkActor> actor;
+  vtkSmartPointer<vtkActor> pointActor;
 
 
-  mitk::PointSet::Pointer splinepointset = mitk::PointSet::New();
 
-  void SetupNavigation(); 
+  void SetupNavigation();
 
   void UpdateTrackingData();
 
+  void CalculationSelected();
+  void PerformCalculation(int calculationType);
   void PerformCalculation1();
   void PerformCalculation2();
   void PerformCalculation3();
+  int m_selectedCalculationType = 1;
 
+  void InterpolationSelected();
+  void PerformInterpolation(int interpolationType);
   void PerformInterpolation1();
   void PerformInterpolation2();
   void PerformInterpolation3();
   void PerformInterpolation4();
   void PerformInterpolation5();
+  int m_selectedInterpolationType = 1;
+
+  void TubeDiameterChanged(int tubeDiameter);
+  void PerformTube();
+  int m_selectedTubeDiameter;
+
+  void VisualizeEndoscope();
 
 };
 

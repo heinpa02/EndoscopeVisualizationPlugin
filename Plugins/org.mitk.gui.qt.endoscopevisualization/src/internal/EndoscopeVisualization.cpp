@@ -44,6 +44,36 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <mitkStaticIGTHelperFunctions.h>
 #include <mitkIGTException.h>
 
+//TEST 
+#include <mitkDataNode.h>
+#include <mitkRenderingManager.h>
+#include <mitkPoint.h>
+#include <mitkDataNode.h>
+#include <mitkPoint.h>
+
+#include <vtkPoints.h>
+#include <vtkCellArray.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkActor.h>
+#include <vtkProperty.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+
+#include <mitkSplineVtkMapper3D.h>
+#include <mitkPointSetVtkMapper3D.h>
+
+#include <vtkSmartPointer.h>
+#include <vtkParametricSpline.h>
+#include <vtkKochanekSpline.h>
+#include <vtkCardinalSpline.h>
+
+#include <vtkParametricFunctionSource.h>
+#include <vtkNamedColors.h>
+#include <vtkVertexGlyphFilter.h>
+#
+
 
 const std::string EndoscopeVisualization::VIEW_ID = "org.mitk.views.endoscopevisualization";
 
@@ -102,9 +132,6 @@ void EndoscopeVisualization::VisualizeEndoscope()
 {
   MITK_INFO << "Erreicht VisualizeEndoscope.";
 
-  
-
-  
   datastorage = this->GetDataStorage();
   if (datastorage == nullptr)
   {
@@ -112,7 +139,7 @@ void EndoscopeVisualization::VisualizeEndoscope()
     return;
   }
 
-  m_Timer->start(1000);
+  m_Timer->start(1000);  
 }
 
 
@@ -169,9 +196,8 @@ void EndoscopeVisualization::InterpolationSelected()
 
 void EndoscopeVisualization::TubeDiameterChanged(int tubediameter) {
   MITK_INFO << "Durchmesser= " << tubediameter;
-  m_selectedtubediameter = tubediameter;
+  m_selectedTubeDiameter = tubediameter;
 }
-
 
 
 void EndoscopeVisualization::SetupNavigation()
@@ -183,8 +209,8 @@ void EndoscopeVisualization::SetupNavigation()
       MITK_ERROR << "Please select the last detected tool.";
     MITK_INFO << "Please start tracking.";
   MITK_INFO << "Please select a tracking device.";
-}
 
+}
 
 
 void EndoscopeVisualization::UpdateTrackingData()
@@ -193,13 +219,17 @@ void EndoscopeVisualization::UpdateTrackingData()
   
   for (size_t i = 0; i <= m_Controls.widget->GetSelectedToolID(); ++i)
   {
+    mitk::NavigationData::Pointer m_NavigationDataSensor;
     m_NavigationDataSensor = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(i);
     mitk::Point3D position = m_NavigationDataSensor->GetPosition();
     mitk::Quaternion orientation = m_NavigationDataSensor->GetOrientation();
     MITK_INFO << "Sensor: " << m_NavigationDataSensor->GetName() << " Position: " << position << " Orientation: " << orientation;
 
-    m_SensorDataList.push_back(m_NavigationDataSensor);
+    m_NavigationDataList.push_back(m_NavigationDataSensor);
   }
+
+
+
 
   PerformCalculation(m_selectedCalculationType);
   PerformInterpolation(m_selectedInterpolationType);
@@ -227,6 +257,8 @@ void EndoscopeVisualization::PerformCalculation(int calculationType)
 
 void EndoscopeVisualization::PerformInterpolation(int interpolationType)
 {
+  MITK_INFO << "Erreicht PerformInterpolation.";
+
   switch (interpolationType)
   {
     case 1:
@@ -248,19 +280,19 @@ void EndoscopeVisualization::PerformInterpolation(int interpolationType)
 }
 
 
-
-
 void EndoscopeVisualization::PerformCalculation1()
 {
   MITK_INFO << "Executing Calculation 1...";
   //
 }
 
+
 void EndoscopeVisualization::PerformCalculation2()
 {
   MITK_INFO << "Executing Calculation 2...";
   //
 }
+
 
 void EndoscopeVisualization::PerformCalculation3()
 {
@@ -274,23 +306,97 @@ void EndoscopeVisualization::PerformInterpolation1()
   MITK_INFO << "Executing Interpolation 1...";
   for (size_t i = 0; i <= m_Controls.widget->GetSelectedToolID(); ++i)
   {
-    mitk::Point3D listposition = m_SensorDataList[i]->GetPosition();
-    mitk::Quaternion listorientation = m_SensorDataList[i]->GetOrientation();
+    mitk::Point3D listposition = m_NavigationDataList[i]->GetPosition();
+    mitk::Quaternion listorientation = m_NavigationDataList[i]->GetOrientation();
     MITK_INFO << " Position: " << listposition << " Orientation: " << listorientation;
   }
 }
 
+
 void EndoscopeVisualization::PerformInterpolation2()
 {
-  MITK_INFO << "Executing Interpolation 2...";
-  // 
-}
+  MITK_INFO << "Executing KochanekSpline.";
+
+  points->SetNumberOfPoints(6);
+  for (size_t i = 0; i < 6; ++i)
+  {
+    mitk::Point3D position = m_NavigationDataList[i]->GetPosition();
+    points->SetPoint(i, position[0], position[1], position[2]);
+  }
+
+  vtkRenderer *vtkRenderer = this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->GetVtkRenderer();
+  
+    if (actor)
+  {
+    vtkRenderer->RemoveActor(actor);
+    actor = nullptr;
+  }
+
+  if (pointActor)
+  {
+    vtkRenderer->RemoveActor(pointActor);
+    pointActor = nullptr;
+  }
+
+
+  vtkNew<vtkNamedColors> colors;
+  int numberOfPoints = points->GetNumberOfPoints();
+
+  vtkNew<vtkKochanekSpline> xSpline;
+  vtkNew<vtkKochanekSpline> ySpline;
+  vtkNew<vtkKochanekSpline> zSpline;
+  vtkNew<vtkParametricSpline> spline;
+
+  spline->SetXSpline(xSpline);
+  spline->SetYSpline(ySpline);
+  spline->SetZSpline(zSpline);
+  spline->SetPoints(points);
+
+  vtkNew<vtkParametricFunctionSource> functionSource;
+  functionSource->SetParametricFunction(spline);
+  functionSource->SetUResolution(50 * numberOfPoints);
+  functionSource->SetVResolution(50 * numberOfPoints);
+  functionSource->Update();
+
+  // Mapper for spline
+   
+  vtkNew<vtkPolyDataMapper> splineMapper;
+  splineMapper->SetInputConnection(functionSource->GetOutputPort());
+
+  actor = vtkNew<vtkActor>();
+  actor->SetMapper(splineMapper);
+  actor->GetProperty()->SetColor(colors->GetColor3d("DarkSlateGrey").GetData());
+  actor->GetProperty()->SetLineWidth(3.0);
+  vtkRenderer->AddActor(actor);
+  
+  // Mapper for PointSet
+  vtkNew<vtkPolyData> polyData;
+  polyData->SetPoints(points);
+
+  vtkNew<vtkVertexGlyphFilter> glyphFilter;
+  glyphFilter->SetInputData(polyData);
+  glyphFilter->Update();
+
+  vtkNew<vtkPolyDataMapper> pointMapper;
+  pointMapper->SetInputConnection(glyphFilter->GetOutputPort());
+
+  pointActor = vtkNew<vtkActor>(); 
+  pointActor->SetMapper(pointMapper);
+  pointActor->GetProperty()->SetPointSize(4);
+  pointActor->GetProperty()->SetColor(colors->GetColor3d("Peacock").GetData());
+  vtkRenderer->AddActor(pointActor);
+
+
+  this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->RequestUpdate();
+} 
+ 
 
 void EndoscopeVisualization::PerformInterpolation3()
 {
-  MITK_INFO << "Executing Interpolation 3...";
-  // 
+//
+
 }
+
 
 void EndoscopeVisualization::PerformInterpolation4()
 {
@@ -298,12 +404,13 @@ void EndoscopeVisualization::PerformInterpolation4()
   // 
 }
 
+
 void EndoscopeVisualization::PerformInterpolation5()
 {
   MITK_INFO << "Executing Interpolation 5...";
   // 
 }
-  
+
 
 void EndoscopeVisualization::PerformTube() 
 {
