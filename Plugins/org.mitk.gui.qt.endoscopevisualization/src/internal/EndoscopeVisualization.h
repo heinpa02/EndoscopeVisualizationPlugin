@@ -45,6 +45,10 @@ See LICENSE.txt or http://www.mitk.org for details.
 
 #include <vtkLandmarkTransform.h>
 #include <vtkSmartPointer.h>
+
+
+#include <vtkParametricFunctionSource.h>
+
 //
 
 /**
@@ -86,8 +90,11 @@ protected:
   
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 
-  vtkSmartPointer<vtkActor> actor;
-  vtkSmartPointer<vtkActor> pointActor;
+  vtkSmartPointer<vtkParametricFunctionSource> functionSource;
+
+  vtkSmartPointer<vtkActor> actorSpline;
+  vtkSmartPointer<vtkActor> actorPoints;
+  vtkSmartPointer<vtkActor> actorTube;
 
 
 
@@ -103,17 +110,21 @@ protected:
   int m_selectedCalculationType = 1;
 
   void InterpolationSelected();
-  void PerformInterpolation(int interpolationType);
-  void PerformInterpolation1();
-  void PerformInterpolation2();
-  void PerformInterpolation3();
+  void PerformInterpolation(int interpolationType); 
+  void PerformInterpolation_Parametric();
+  void PerformInterpolation_Kochanek();
+  void PerformInterpolation_Cardinal();
   void PerformInterpolation4();
   void PerformInterpolation5();
+  
   int m_selectedInterpolationType = 1;
 
   void TubeDiameterChanged(int tubeDiameter);
-  void PerformTube();
-  int m_selectedTubeDiameter;
+  int m_selectedTubeDiameter = 10;
+
+  void VisualizePoints();
+  void VisualizeSpline();
+  void VisualizeTube();
 
   void VisualizeEndoscope();
 

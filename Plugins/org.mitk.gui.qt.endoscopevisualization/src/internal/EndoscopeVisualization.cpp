@@ -61,13 +61,12 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 
-#include <mitkSplineVtkMapper3D.h>
-#include <mitkPointSetVtkMapper3D.h>
-
 #include <vtkSmartPointer.h>
 #include <vtkParametricSpline.h>
 #include <vtkKochanekSpline.h>
 #include <vtkCardinalSpline.h>
+#include <vtkSCurveSpline.h>
+#include <vtkTubeFilter.h>
 
 #include <vtkParametricFunctionSource.h>
 #include <vtkNamedColors.h>
@@ -139,7 +138,7 @@ void EndoscopeVisualization::VisualizeEndoscope()
     return;
   }
 
-  m_Timer->start(1000);  
+  m_Timer->start(100);  
 }
 
 
@@ -210,6 +209,8 @@ void EndoscopeVisualization::SetupNavigation()
     MITK_INFO << "Please start tracking.";
   MITK_INFO << "Please select a tracking device.";
 
+  
+
 }
 
 
@@ -217,6 +218,7 @@ void EndoscopeVisualization::UpdateTrackingData()
 {
   MITK_INFO << "Update trackingdata";
   
+  m_NavigationDataList.clear();
   for (size_t i = 0; i <= m_Controls.widget->GetSelectedToolID(); ++i)
   {
     mitk::NavigationData::Pointer m_NavigationDataSensor;
@@ -228,12 +230,40 @@ void EndoscopeVisualization::UpdateTrackingData()
     m_NavigationDataList.push_back(m_NavigationDataSensor);
   }
 
+    vtkRenderer *vtkRenderer = this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->GetVtkRenderer();
 
+  if (actorPoints)
+  {
+    vtkRenderer->RemoveActor(actorPoints);
+    actorPoints = nullptr;
+  }
+  if (actorSpline)
+  {
+    vtkRenderer->RemoveActor(actorSpline);
+    actorSpline = nullptr;
+  }
+  if (actorTube)
+  {
+    vtkRenderer->RemoveActor(actorTube);
+    actorTube = nullptr;
+  }
 
 
   PerformCalculation(m_selectedCalculationType);
+
+  points->SetNumberOfPoints(m_NavigationDataList.size());
+  for (size_t i = 0; i < m_NavigationDataList.size(); ++i)
+  {
+    mitk::Point3D position = m_NavigationDataList[i]->GetPosition();
+    points->SetPoint(i, position[0], position[1], position[2]);
+  }
+
   PerformInterpolation(m_selectedInterpolationType);
-  PerformTube();
+  VisualizePoints();
+  VisualizeSpline();
+  VisualizeTube();
+
+  this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->RequestUpdate();
 
 }
 
@@ -262,13 +292,13 @@ void EndoscopeVisualization::PerformInterpolation(int interpolationType)
   switch (interpolationType)
   {
     case 1:
-      PerformInterpolation1();
+      PerformInterpolation_Parametric();
       break;
     case 2:
-      PerformInterpolation2();
+      PerformInterpolation_Kochanek();
       break;
     case 3:
-      PerformInterpolation3();
+      PerformInterpolation_Cardinal();
       break;
     case 4:
       PerformInterpolation4();
@@ -282,8 +312,7 @@ void EndoscopeVisualization::PerformInterpolation(int interpolationType)
 
 void EndoscopeVisualization::PerformCalculation1()
 {
-  MITK_INFO << "Executing Calculation 1...";
-  //
+
 }
 
 
@@ -301,43 +330,27 @@ void EndoscopeVisualization::PerformCalculation3()
 }
 
 
-void EndoscopeVisualization::PerformInterpolation1()
+void EndoscopeVisualization::PerformInterpolation_Parametric()
 {
-  MITK_INFO << "Executing Interpolation 1...";
-  for (size_t i = 0; i <= m_Controls.widget->GetSelectedToolID(); ++i)
-  {
-    mitk::Point3D listposition = m_NavigationDataList[i]->GetPosition();
-    mitk::Quaternion listorientation = m_NavigationDataList[i]->GetOrientation();
-    MITK_INFO << " Position: " << listposition << " Orientation: " << listorientation;
-  }
+  MITK_INFO << "ParametricSpline";
+
+  vtkNew<vtkNamedColors> colors;
+  int numberOfPoints = points->GetNumberOfPoints();
+
+  vtkNew<vtkParametricSpline> spline;
+  spline->SetPoints(points);
+
+  functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
+  functionSource->SetParametricFunction(spline);
+  functionSource->SetUResolution(50 * numberOfPoints);
+  functionSource->SetVResolution(50 * numberOfPoints);
+  functionSource->Update();
 }
 
 
-void EndoscopeVisualization::PerformInterpolation2()
+void EndoscopeVisualization::PerformInterpolation_Kochanek()
 {
-  MITK_INFO << "Executing KochanekSpline.";
-
-  points->SetNumberOfPoints(6);
-  for (size_t i = 0; i < 6; ++i)
-  {
-    mitk::Point3D position = m_NavigationDataList[i]->GetPosition();
-    points->SetPoint(i, position[0], position[1], position[2]);
-  }
-
-  vtkRenderer *vtkRenderer = this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->GetVtkRenderer();
-  
-    if (actor)
-  {
-    vtkRenderer->RemoveActor(actor);
-    actor = nullptr;
-  }
-
-  if (pointActor)
-  {
-    vtkRenderer->RemoveActor(pointActor);
-    pointActor = nullptr;
-  }
-
+  MITK_INFO << "KochanekSpline";
 
   vtkNew<vtkNamedColors> colors;
   int numberOfPoints = points->GetNumberOfPoints();
@@ -352,24 +365,74 @@ void EndoscopeVisualization::PerformInterpolation2()
   spline->SetZSpline(zSpline);
   spline->SetPoints(points);
 
-  vtkNew<vtkParametricFunctionSource> functionSource;
+  functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
   functionSource->SetParametricFunction(spline);
   functionSource->SetUResolution(50 * numberOfPoints);
   functionSource->SetVResolution(50 * numberOfPoints);
   functionSource->Update();
+} 
+ 
 
-  // Mapper for spline
-   
+void EndoscopeVisualization::PerformInterpolation_Cardinal()
+{
+  MITK_INFO << "CardinalSpline";
+
+  vtkNew<vtkNamedColors> colors;
+  int numberOfPoints = points->GetNumberOfPoints();
+
+  vtkNew<vtkCardinalSpline> xSpline;
+  vtkNew<vtkCardinalSpline> ySpline;
+  vtkNew<vtkCardinalSpline> zSpline;
+  vtkNew<vtkParametricSpline> spline;
+
+  spline->SetXSpline(xSpline);
+  spline->SetYSpline(ySpline);
+  spline->SetZSpline(zSpline);
+  spline->SetPoints(points);
+
+  functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
+  functionSource->SetParametricFunction(spline);
+  functionSource->SetUResolution(50 * numberOfPoints);
+  functionSource->SetVResolution(50 * numberOfPoints);
+  functionSource->Update();
+}
+
+
+void EndoscopeVisualization::PerformInterpolation4()
+{
+  
+}
+
+
+void EndoscopeVisualization::PerformInterpolation5()
+{
+
+}
+
+
+void EndoscopeVisualization::VisualizeSpline() 
+{
+  MITK_INFO << "VisualizeSpline";
+
+  vtkNew<vtkNamedColors> colors;
   vtkNew<vtkPolyDataMapper> splineMapper;
   splineMapper->SetInputConnection(functionSource->GetOutputPort());
 
-  actor = vtkNew<vtkActor>();
-  actor->SetMapper(splineMapper);
-  actor->GetProperty()->SetColor(colors->GetColor3d("DarkSlateGrey").GetData());
-  actor->GetProperty()->SetLineWidth(3.0);
-  vtkRenderer->AddActor(actor);
+  actorSpline = vtkNew<vtkActor>();
+  actorSpline->SetMapper(splineMapper);
+  actorSpline->GetProperty()->SetColor(colors->GetColor3d("DarkSlateGrey").GetData());
+  actorSpline->GetProperty()->SetLineWidth(3.0);
+
+  this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->GetVtkRenderer()->AddActor(actorSpline);
+}
+
+void EndoscopeVisualization::VisualizePoints()
+{
+
+  MITK_INFO << "VisualizePoints";
   
-  // Mapper for PointSet
+  vtkNew<vtkNamedColors> colors;
+
   vtkNew<vtkPolyData> polyData;
   polyData->SetPoints(points);
 
@@ -380,39 +443,30 @@ void EndoscopeVisualization::PerformInterpolation2()
   vtkNew<vtkPolyDataMapper> pointMapper;
   pointMapper->SetInputConnection(glyphFilter->GetOutputPort());
 
-  pointActor = vtkNew<vtkActor>(); 
-  pointActor->SetMapper(pointMapper);
-  pointActor->GetProperty()->SetPointSize(4);
-  pointActor->GetProperty()->SetColor(colors->GetColor3d("Peacock").GetData());
-  vtkRenderer->AddActor(pointActor);
+  actorPoints = vtkNew<vtkActor>();
+  actorPoints->SetMapper(pointMapper);
+  actorPoints->GetProperty()->SetPointSize(4);
+  actorPoints->GetProperty()->SetColor(colors->GetColor3d("Peacock").GetData());
 
-
-  this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->RequestUpdate();
-} 
- 
-
-void EndoscopeVisualization::PerformInterpolation3()
-{
-//
-
+  this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->GetVtkRenderer()->AddActor(actorPoints);
 }
 
-
-void EndoscopeVisualization::PerformInterpolation4()
+void EndoscopeVisualization::VisualizeTube() 
 {
-  MITK_INFO << "Executing Interpolation 4...";
-  // 
-}
 
+  MITK_INFO << "VisualizeTube";
 
-void EndoscopeVisualization::PerformInterpolation5()
-{
-  MITK_INFO << "Executing Interpolation 5...";
-  // 
-}
+  vtkSmartPointer<vtkTubeFilter> tubeFilter = vtkSmartPointer<vtkTubeFilter>::New();
+  tubeFilter->SetInputConnection(functionSource->GetOutputPort());
+  tubeFilter->SetRadius(m_selectedTubeDiameter / 2);
+  tubeFilter->SetNumberOfSides(20);
+  tubeFilter->Update();
 
+  vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  mapper->SetInputConnection(tubeFilter->GetOutputPort());
 
-void EndoscopeVisualization::PerformTube() 
-{
-  MITK_INFO << "Tube in progress.";
+  actorTube = vtkNew<vtkActor>();
+  actorTube->SetMapper(mapper);
+
+  this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->GetVtkRenderer()->AddActor(actorTube);
 }
