@@ -49,7 +49,9 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <mitkRenderingManager.h>
 #include <mitkPoint.h>
 #include <mitkDataNode.h>
-#include <mitkPoint.h>
+#include <mitkQuaternionAveraging.h>
+#include <mitkQuaternion.h>
+#include <vector>
 
 #include <vtkPoints.h>
 #include <vtkCellArray.h>
@@ -62,16 +64,19 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <vtkRenderWindowInteractor.h>
 
 #include <vtkSmartPointer.h>
+#include "vtkSpline.h"
 #include <vtkParametricSpline.h>
 #include <vtkKochanekSpline.h>
 #include <vtkCardinalSpline.h>
 #include <vtkSCurveSpline.h>
 #include <vtkTubeFilter.h>
 
+#include <vtkQuaternion.h>
+
 #include <vtkParametricFunctionSource.h>
 #include <vtkNamedColors.h>
 #include <vtkVertexGlyphFilter.h>
-#
+
 
 
 const std::string EndoscopeVisualization::VIEW_ID = "org.mitk.views.endoscopevisualization";
@@ -248,13 +253,14 @@ void EndoscopeVisualization::UpdateTrackingData()
     actorTube = nullptr;
   }
 
+  functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
 
   PerformCalculation(m_selectedCalculationType);
 
-  points->SetNumberOfPoints(m_NavigationDataList.size());
-  for (size_t i = 0; i < m_NavigationDataList.size(); ++i)
+  points->SetNumberOfPoints(m_NodeList.size());
+  for (size_t i = 0; i < m_NodeList.size(); ++i)
   {
-    mitk::Point3D position = m_NavigationDataList[i]->GetPosition();
+    mitk::Point3D position = m_NodeList[i]->GetPosition();
     points->SetPoint(i, position[0], position[1], position[2]);
   }
 
@@ -301,7 +307,7 @@ void EndoscopeVisualization::PerformInterpolation(int interpolationType)
       PerformInterpolation_Cardinal();
       break;
     case 4:
-      PerformInterpolation4();
+      PerformInterpolation_SCurve();
       break;
     case 5:
       PerformInterpolation5();
@@ -312,8 +318,50 @@ void EndoscopeVisualization::PerformInterpolation(int interpolationType)
 
 void EndoscopeVisualization::PerformCalculation1()
 {
-
+  m_NodeList.clear();
+  mitk::NavigationData::Pointer node1 = mitk::NavigationData::New();
+  mitk::NavigationData::Pointer node2 = mitk::NavigationData::New();
+  mitk::NavigationData::Pointer node3 = mitk::NavigationData::New();
+  node1 = CalculateMidpointAndOrientation(m_NavigationDataList[0], m_NavigationDataList[1]);
+  node2 = CalculateMidpointAndOrientation(m_NavigationDataList[2], m_NavigationDataList[3]);
+  node3 = CalculateMidpointAndOrientation(m_NavigationDataList[4], m_NavigationDataList[5]);
+  m_NodeList.push_back(node1);
+  m_NodeList.push_back(node2);
+  m_NodeList.push_back(node3);
 }
+
+mitk::NavigationData::Pointer EndoscopeVisualization::CalculateMidpointAndOrientation(mitk::NavigationData::Pointer sensor1Data, mitk::NavigationData::Pointer sensor2Data)
+{
+  mitk::NavigationData::Pointer average = mitk::NavigationData::New();
+
+  mitk::Point3D position1 = sensor1Data->GetPosition();
+  mitk::Point3D position2 = sensor2Data->GetPosition();
+
+  mitk::Point3D midpoint;
+  midpoint[0] = (position1[0] + position2[0]) / 2.0;
+  midpoint[1] = (position1[1] + position2[1]) / 2.0;
+  midpoint[2] = (position1[2] + position2[2]) / 2.0;
+
+ average->SetPosition(midpoint);
+
+  mitk::Quaternion orientation1 = sensor1Data->GetOrientation();
+  mitk::Quaternion orientation2 = sensor2Data->GetOrientation();
+ 
+  vtkQuaternion<double> vtkQuat1(orientation1.angle(), orientation1.x(), orientation1.y(), orientation1.z());
+  vtkQuaternion<double> vtkQuat2(orientation2.angle(), orientation2.x(), orientation2.y(), orientation2.z());
+
+  vtkQuaternion<double> midpointOrientation;
+  double t = 0.5;
+  midpointOrientation.InnerPoint(vtkQuat1, vtkQuat2);
+
+  mitk::Quaternion mid(midpointOrientation.GetW(), midpointOrientation.GetX(), midpointOrientation.GetY(), midpointOrientation.GetZ());
+
+  average->SetOrientation(mid);
+
+  return average;
+}
+
+
 
 
 void EndoscopeVisualization::PerformCalculation2()
@@ -340,10 +388,10 @@ void EndoscopeVisualization::PerformInterpolation_Parametric()
   vtkNew<vtkParametricSpline> spline;
   spline->SetPoints(points);
 
-  functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
   functionSource->SetParametricFunction(spline);
   functionSource->SetUResolution(50 * numberOfPoints);
   functionSource->SetVResolution(50 * numberOfPoints);
+  functionSource->SetWResolution(50 * numberOfPoints);
   functionSource->Update();
 }
 
@@ -356,8 +404,17 @@ void EndoscopeVisualization::PerformInterpolation_Kochanek()
   int numberOfPoints = points->GetNumberOfPoints();
 
   vtkNew<vtkKochanekSpline> xSpline;
+  xSpline->SetDefaultBias(0);
+  xSpline->SetDefaultTension(0);
+  xSpline->SetDefaultContinuity(0);
   vtkNew<vtkKochanekSpline> ySpline;
+  ySpline->SetDefaultBias(0);
+  ySpline->SetDefaultTension(0);
+  ySpline->SetDefaultContinuity(0);
   vtkNew<vtkKochanekSpline> zSpline;
+  zSpline->SetDefaultBias(0);
+  zSpline->SetDefaultTension(0);
+  zSpline->SetDefaultContinuity(0);
   vtkNew<vtkParametricSpline> spline;
 
   spline->SetXSpline(xSpline);
@@ -365,10 +422,10 @@ void EndoscopeVisualization::PerformInterpolation_Kochanek()
   spline->SetZSpline(zSpline);
   spline->SetPoints(points);
 
-  functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
   functionSource->SetParametricFunction(spline);
   functionSource->SetUResolution(50 * numberOfPoints);
   functionSource->SetVResolution(50 * numberOfPoints);
+  functionSource->SetWResolution(50 * numberOfPoints);
   functionSource->Update();
 } 
  
@@ -390,17 +447,37 @@ void EndoscopeVisualization::PerformInterpolation_Cardinal()
   spline->SetZSpline(zSpline);
   spline->SetPoints(points);
 
-  functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
   functionSource->SetParametricFunction(spline);
   functionSource->SetUResolution(50 * numberOfPoints);
   functionSource->SetVResolution(50 * numberOfPoints);
+  functionSource->SetWResolution(50 * numberOfPoints);
   functionSource->Update();
 }
 
 
-void EndoscopeVisualization::PerformInterpolation4()
+void EndoscopeVisualization::PerformInterpolation_SCurve()
 {
-  
+  MITK_INFO << "SCurveSpline";
+
+  vtkNew<vtkNamedColors> colors;
+  int numberOfPoints = points->GetNumberOfPoints();
+
+  vtkNew<vtkSCurveSpline> xSpline;
+  vtkNew<vtkSCurveSpline> ySpline;
+  vtkNew<vtkSCurveSpline> zSpline;
+  vtkNew<vtkParametricSpline> spline;
+
+  spline->SetXSpline(xSpline);
+  spline->SetYSpline(ySpline);
+  spline->SetZSpline(zSpline);
+  spline->SetPoints(points);
+
+  functionSource->SetParametricFunction(spline);
+  functionSource->SetUResolution(50 * numberOfPoints);
+  functionSource->SetVResolution(50 * numberOfPoints);
+  functionSource->SetWResolution(50 * numberOfPoints);
+  functionSource->Update();
+
 }
 
 

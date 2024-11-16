@@ -87,7 +87,8 @@ protected:
 
   mitk::DataStorage *datastorage;                                           // data storage that contains the navigation data
   std::vector<mitk::NavigationData::Pointer> m_NavigationDataList;          // list containing the navigation data of the 6 sensors
-  
+  std::vector<mitk::NavigationData::Pointer> m_NodeList;
+
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 
   vtkSmartPointer<vtkParametricFunctionSource> functionSource;
@@ -105,6 +106,7 @@ protected:
   void CalculationSelected();
   void PerformCalculation(int calculationType);
   void PerformCalculation1();
+  mitk::NavigationData::Pointer CalculateMidpointAndOrientation(mitk::NavigationData::Pointer sensor1Data, mitk::NavigationData::Pointer sensor2Data);
   void PerformCalculation2();
   void PerformCalculation3();
   int m_selectedCalculationType = 1;
@@ -114,7 +116,7 @@ protected:
   void PerformInterpolation_Parametric();
   void PerformInterpolation_Kochanek();
   void PerformInterpolation_Cardinal();
-  void PerformInterpolation4();
+  void PerformInterpolation_SCurve();
   void PerformInterpolation5();
   
   int m_selectedInterpolationType = 1;
