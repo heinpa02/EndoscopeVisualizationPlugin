@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>380</width>
+    <width>389</width>
     <height>563</height>
    </rect>
   </property>
@@ -100,30 +100,16 @@
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QRadioButton" name="Interpol5">
-        <property name="text">
-         <string>Interpol5</string>
-        </property>
-       </widget>
-      </item>
      </layout>
     </widget>
    </item>
    <item>
     <widget class="QGroupBox" name="TubeDiameterSelection">
      <property name="title">
-      <string>TubeDiameterSelection</string>
+      <string>Tube</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="1">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>cm diameter</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
        <widget class="QSpinBox" name="spinBoxTubeDiameter">
         <property name="minimum">
          <number>8</number>
@@ -136,6 +122,20 @@
         </property>
         <property name="value">
          <number>10</number>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>cm diameter</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="checkBox_Tube">
+        <property name="text">
+         <string>activate</string>
         </property>
        </widget>
       </item>

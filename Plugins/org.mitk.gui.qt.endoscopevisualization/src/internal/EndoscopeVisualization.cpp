@@ -71,11 +71,15 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <vtkSCurveSpline.h>
 #include <vtkTubeFilter.h>
 
+#include <mitkMatrix.h>
+#include <mitkVector.h>
 #include <vtkQuaternion.h>
+#include <vtkMatrix4x4.h>
 
 #include <vtkParametricFunctionSource.h>
 #include <vtkNamedColors.h>
 #include <vtkVertexGlyphFilter.h>
+
 
 
 
@@ -123,7 +127,6 @@ void EndoscopeVisualization::CreateQtPartControl(QWidget *parent)
   connect(m_Controls.Interpol2, &QRadioButton::clicked, this, &EndoscopeVisualization::InterpolationSelected);
   connect(m_Controls.Interpol3, &QRadioButton::clicked, this, &EndoscopeVisualization::InterpolationSelected);
   connect(m_Controls.Interpol4, &QRadioButton::clicked, this, &EndoscopeVisualization::InterpolationSelected);
-  connect(m_Controls.Interpol5, &QRadioButton::clicked, this, &EndoscopeVisualization::InterpolationSelected);
   m_Controls.Interpol1->setChecked(true);
 
   // TubeDiameterSelection spinbox
@@ -143,7 +146,7 @@ void EndoscopeVisualization::VisualizeEndoscope()
     return;
   }
 
-  m_Timer->start(100);  
+  m_Timer->start(10);  
 }
 
 
@@ -189,11 +192,6 @@ void EndoscopeVisualization::InterpolationSelected()
     MITK_INFO << "Interpolation 4 ";
     m_selectedInterpolationType = 4;
   }
-  else if (m_Controls.Interpol5->isChecked())
-  {
-    MITK_INFO << "Interpolation 5 ";
-    m_selectedInterpolationType = 5;
-  }
 }
 
 
@@ -213,9 +211,6 @@ void EndoscopeVisualization::SetupNavigation()
       MITK_ERROR << "Please select the last detected tool.";
     MITK_INFO << "Please start tracking.";
   MITK_INFO << "Please select a tracking device.";
-
-  
-
 }
 
 
@@ -223,17 +218,73 @@ void EndoscopeVisualization::UpdateTrackingData()
 {
   MITK_INFO << "Update trackingdata";
   
-  m_NavigationDataList.clear();
-  for (size_t i = 0; i <= m_Controls.widget->GetSelectedToolID(); ++i)
-  {
-    mitk::NavigationData::Pointer m_NavigationDataSensor;
-    m_NavigationDataSensor = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(i);
-    mitk::Point3D position = m_NavigationDataSensor->GetPosition();
-    mitk::Quaternion orientation = m_NavigationDataSensor->GetOrientation();
-    MITK_INFO << "Sensor: " << m_NavigationDataSensor->GetName() << " Position: " << position << " Orientation: " << orientation;
+  // extract tracking data from the navigation data source
 
-    m_NavigationDataList.push_back(m_NavigationDataSensor);
+  m_NavigationDataList.clear();
+  if (m_Controls.widget->GetSelectedToolID() <= 6)
+  {
+    for (size_t i = 0; i <= m_Controls.widget->GetSelectedToolID(); ++i)
+    {
+      mitk::NavigationData::Pointer m_NavigationDataSensor;
+      m_NavigationDataSensor = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(i);
+      m_NavigationDataList.push_back(m_NavigationDataSensor);
+    }
   }
+  else{
+    MITK_INFO<< "Additional sensor detected. Make sure the EndoscopeNavigation is plugged into the first three inputs.";
+     mitk::NavigationData::Pointer m_NavigationDataSensor0 = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(0);
+     m_NavigationDataList.push_back(m_NavigationDataSensor0);
+     mitk::NavigationData::Pointer m_NavigationDataSensor1 = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(1);
+     m_NavigationDataList.push_back(m_NavigationDataSensor1);
+     mitk::NavigationData::Pointer m_NavigationDataSensor2 = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(2);
+     m_NavigationDataList.push_back(m_NavigationDataSensor2);
+     mitk::NavigationData::Pointer m_NavigationDataSensor3 = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(4);
+     m_NavigationDataList.push_back(m_NavigationDataSensor3);
+     mitk::NavigationData::Pointer m_NavigationDataSensor4 = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(5);
+     m_NavigationDataList.push_back(m_NavigationDataSensor4);
+     mitk::NavigationData::Pointer m_NavigationDataSensor5 = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(6);
+     m_NavigationDataList.push_back(m_NavigationDataSensor5);
+  }
+ 
+
+  // processing tracking data and visualizing endoscope
+
+  PerformCalculation(m_selectedCalculationType);
+  PerformInterpolation(m_selectedInterpolationType);
+  VisualizePoints();
+  VisualizeSpline();
+  VisualizeTube();
+
+  this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->RequestUpdate();
+
+}
+
+
+void EndoscopeVisualization::PerformCalculation(int calculationType) 
+{
+  // initialize new for next iteration
+  m_NodeList.clear();
+  points = vtkSmartPointer<vtkPoints>::New();
+  functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
+
+  switch (calculationType)
+  {
+    case 1:
+      PerformCalculation1();
+      break;
+    case 2:
+      PerformCalculation2();
+      break;
+    case 3:
+      PerformCalculation3();
+      break;
+  }
+}
+
+
+void EndoscopeVisualization::PerformInterpolation(int interpolationType)
+{
+  MITK_INFO << "Erreicht PerformInterpolation.";
 
     vtkRenderer *vtkRenderer = this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->GetVtkRenderer();
 
@@ -253,47 +304,7 @@ void EndoscopeVisualization::UpdateTrackingData()
     actorTube = nullptr;
   }
 
-  functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
-
-  PerformCalculation(m_selectedCalculationType);
-
-  points->SetNumberOfPoints(m_NodeList.size());
-  for (size_t i = 0; i < m_NodeList.size(); ++i)
-  {
-    mitk::Point3D position = m_NodeList[i]->GetPosition();
-    points->SetPoint(i, position[0], position[1], position[2]);
-  }
-
-  PerformInterpolation(m_selectedInterpolationType);
-  VisualizePoints();
-  VisualizeSpline();
-  VisualizeTube();
-
-  this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->RequestUpdate();
-
-}
-
-
-void EndoscopeVisualization::PerformCalculation(int calculationType) 
-{
-  switch (calculationType)
-  {
-    case 1:
-      PerformCalculation1();
-      break;
-    case 2:
-      PerformCalculation2();
-      break;
-    case 3:
-      PerformCalculation3();
-      break;
-  }
-}
-
-
-void EndoscopeVisualization::PerformInterpolation(int interpolationType)
-{
-  MITK_INFO << "Erreicht PerformInterpolation.";
+  
 
   switch (interpolationType)
   {
@@ -318,7 +329,8 @@ void EndoscopeVisualization::PerformInterpolation(int interpolationType)
 
 void EndoscopeVisualization::PerformCalculation1()
 {
-  m_NodeList.clear();
+  MITK_INFO << "Averaging Positions";
+
   mitk::NavigationData::Pointer node1 = mitk::NavigationData::New();
   mitk::NavigationData::Pointer node2 = mitk::NavigationData::New();
   mitk::NavigationData::Pointer node3 = mitk::NavigationData::New();
@@ -328,53 +340,190 @@ void EndoscopeVisualization::PerformCalculation1()
   m_NodeList.push_back(node1);
   m_NodeList.push_back(node2);
   m_NodeList.push_back(node3);
+
+  points->SetNumberOfPoints(m_NodeList.size());
+  for (size_t i = 0; i < m_NodeList.size(); ++i)
+  {
+    mitk::Point3D position = m_NodeList[i]->GetPosition();
+    points->SetPoint(i, position[0], position[1], position[2]);
+  }
 }
+
 
 mitk::NavigationData::Pointer EndoscopeVisualization::CalculateMidpointAndOrientation(mitk::NavigationData::Pointer sensor1Data, mitk::NavigationData::Pointer sensor2Data)
 {
-  mitk::NavigationData::Pointer average = mitk::NavigationData::New();
 
   mitk::Point3D position1 = sensor1Data->GetPosition();
   mitk::Point3D position2 = sensor2Data->GetPosition();
+
+  mitk::Quaternion orientation1 = sensor1Data->GetOrientation();
+  mitk::Quaternion orientation2 = sensor2Data->GetOrientation();
+
+  MITK_INFO << orientation1.rotation_euler_angles();
+  MITK_INFO << orientation2.rotation_euler_angles();
+
+  vtkQuaternion<double> vtkQuat1(orientation1.r(), orientation1.x(), orientation1.y(), orientation1.z());
+  vtkQuaternion<double> vtkQuat2(orientation2.r(), orientation2.x(), orientation2.y(), orientation2.z());
+
+
+  mitk::NavigationData::Pointer newsensor = mitk::NavigationData::New();
+
+  // Position imaginary 6DOF sensor 
 
   mitk::Point3D midpoint;
   midpoint[0] = (position1[0] + position2[0]) / 2.0;
   midpoint[1] = (position1[1] + position2[1]) / 2.0;
   midpoint[2] = (position1[2] + position2[2]) / 2.0;
+  
+  newsensor->SetPosition(midpoint);
 
- average->SetPosition(midpoint);
+  //Orientnation imaginary 6DOF sensor 
 
-  mitk::Quaternion orientation1 = sensor1Data->GetOrientation();
-  mitk::Quaternion orientation2 = sensor2Data->GetOrientation();
+  vtkQuaternion<double> vtkMidOri = vtkQuat1.Slerp(0.5, vtkQuat2);
+
+  double dx = position2[0] - position1[0];
+  double dy = position2[1] - position1[1];
+  double yaw_m = std::atan2(dy, dx);
+
+  vtkQuaternion<double> vtkZ(yaw_m, 0, 0, 1);
+
+  vtkQuaternion<double> combined = vtkZ * vtkMidOri;
+  
+  double angleini = vtkMidOri.GetW();
+  double xini = vtkMidOri.GetX();
+  double yini = vtkMidOri.GetY();
+  double zini = vtkMidOri.GetZ();
+
+  mitk::Quaternion MidOri(xini, yini, zini, angleini);
+
+  double r = combined.GetW();
+  double x = combined.GetX();
+  double yin = combined.GetY();
+  double zin = combined.GetZ();
  
-  vtkQuaternion<double> vtkQuat1(orientation1.angle(), orientation1.x(), orientation1.y(), orientation1.z());
-  vtkQuaternion<double> vtkQuat2(orientation2.angle(), orientation2.x(), orientation2.y(), orientation2.z());
+  mitk::Quaternion finalOrientation_commbined(x, yin, zin, r);
 
-  vtkQuaternion<double> midpointOrientation;
-  double t = 0.5;
-  midpointOrientation.InnerPoint(vtkQuat1, vtkQuat2);
+  newsensor->SetOrientation(MidOri);
 
-  mitk::Quaternion mid(midpointOrientation.GetW(), midpointOrientation.GetX(), midpointOrientation.GetY(), midpointOrientation.GetZ());
-
-  average->SetOrientation(mid);
-
-  return average;
+  return newsensor;
 }
-
 
 
 
 void EndoscopeVisualization::PerformCalculation2()
 {
-  MITK_INFO << "Executing Calculation 2...";
-  //
+  MITK_INFO << "Averaging Positions and adding point offset the x-axis ";
+
+  mitk::NavigationData::Pointer node1 = mitk::NavigationData::New();
+  mitk::NavigationData::Pointer node2 = mitk::NavigationData::New();
+  mitk::NavigationData::Pointer node3 = mitk::NavigationData::New();
+  node1 = CalculateMidpointAndOrientation(m_NavigationDataList[0], m_NavigationDataList[1]);
+  node2 = CalculateMidpointAndOrientation(m_NavigationDataList[2], m_NavigationDataList[3]);
+  node3 = CalculateMidpointAndOrientation(m_NavigationDataList[4], m_NavigationDataList[5]);
+  m_NodeList.push_back(node1);
+  m_NodeList.push_back(node2);
+  m_NodeList.push_back(node3);
+
+
+  for (size_t i = 0; i < m_NodeList.size(); ++i)
+  {
+    mitk::Point3D position = m_NodeList[i]->GetPosition();
+    if (position[0] != 0)
+    { 
+      points->InsertNextPoint(position[0], position[1], position[2]);
+
+      mitk::Quaternion orientation = m_NodeList[i]->GetOrientation();
+      
+      orientation.normalize();
+     
+      itk::Matrix<double, 3, 3> rotationMatrix;
+      rotationMatrix = orientation.rotation_matrix_transpose().transpose();
+
+      itk::Vector<double, 3> z;
+      z[0] = 0.0;
+      z[1] = 0.0;
+      z[2] = -1.0;
+
+      itk::Vector<double, 3> zAxisLocal = rotationMatrix * z;
+      itk::Vector<double, 3> displacement = zAxisLocal * 3;
+
+      mitk::Point3D newPosition;
+      newPosition[0] = position[0] + displacement[0];
+      newPosition[1] = position[1] + displacement[1];
+      newPosition[2] = position[2] + displacement[2];
+
+      MITK_INFO << newPosition;
+      points->InsertNextPoint(newPosition[0], newPosition[1], newPosition[2]);
+    }
+  }
 }
 
 
 void EndoscopeVisualization::PerformCalculation3()
 {
-  MITK_INFO << "Executing Calculation 3...";
-  //
+  MITK_INFO << "Averaging 2 Splines";
+
+  pointseven = vtkSmartPointer<vtkPoints>::New();
+  pointsuneven = vtkSmartPointer<vtkPoints>::New();
+
+  for (size_t i = 0; i < m_NavigationDataList.size(); ++i)
+  {
+    mitk::Point3D position = m_NavigationDataList[i]->GetPosition();
+    if (i % 2 == 0)
+    {
+      pointseven->InsertNextPoint(position[0], position[1], position[2]);
+    }
+    else
+    {
+      pointsuneven->InsertNextPoint(position[0], position[1], position[2]);
+    }
+  }
+  
+    MITK_INFO << "EVEN";
+
+  points->DeepCopy(pointseven);
+  PerformInterpolation(m_selectedInterpolationType);
+
+  vtkPoints *pointscopy = spline->GetPoints();
+  splineEven->SetPoints(pointscopy);
+
+  MITK_INFO << "UNEVEN";
+  
+  points->DeepCopy(pointsuneven);
+  PerformInterpolation(m_selectedInterpolationType);
+
+  vtkPoints *pointscopyun = spline->GetPoints();
+  splineEven->SetPoints(pointscopyun);
+
+  MITK_INFO << "AVERAGE";
+  
+  vtkSmartPointer<vtkPoints> averagedPoints = vtkSmartPointer<vtkPoints>::New();
+
+  int numSteps = 10;
+
+  points = vtkSmartPointer<vtkPoints>::New();
+
+
+  for (int i = 0; i < numSteps; ++i)
+  {
+    double t_value = i / double(numSteps - 1);
+    double* t = &t_value;
+    double point1[3];
+    double Du[9];
+
+    splineEven->Evaluate(t, point1, Du);
+    double point2[3];
+    splineUneven->Evaluate(t, point2, Du);
+
+    double midpoint[3];
+    for (int j = 0; j < 3; ++j)
+    {
+      midpoint[j] = point1[j] + 0.5 * (point2[j] - point1[j]);
+    }
+    MITK_INFO << "Point:" << midpoint;
+    points->InsertNextPoint(midpoint);
+  }
+  
 }
 
 
@@ -477,7 +626,6 @@ void EndoscopeVisualization::PerformInterpolation_SCurve()
   functionSource->SetVResolution(50 * numberOfPoints);
   functionSource->SetWResolution(50 * numberOfPoints);
   functionSource->Update();
-
 }
 
 
@@ -505,9 +653,8 @@ void EndoscopeVisualization::VisualizeSpline()
 
 void EndoscopeVisualization::VisualizePoints()
 {
-
   MITK_INFO << "VisualizePoints";
-  
+
   vtkNew<vtkNamedColors> colors;
 
   vtkNew<vtkPolyData> polyData;
@@ -525,7 +672,11 @@ void EndoscopeVisualization::VisualizePoints()
   actorPoints->GetProperty()->SetPointSize(4);
   actorPoints->GetProperty()->SetColor(colors->GetColor3d("Peacock").GetData());
 
-  this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->GetVtkRenderer()->AddActor(actorPoints);
+  this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)
+    ->GetQmitkRenderWindow("3d")
+    ->GetRenderer()
+    ->GetVtkRenderer()
+    ->AddActor(actorPoints);
 }
 
 void EndoscopeVisualization::VisualizeTube() 

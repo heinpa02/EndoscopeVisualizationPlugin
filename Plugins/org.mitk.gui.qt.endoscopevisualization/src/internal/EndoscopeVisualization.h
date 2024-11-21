@@ -48,6 +48,9 @@ See LICENSE.txt or http://www.mitk.org for details.
 
 
 #include <vtkParametricFunctionSource.h>
+#include <vtkParametricSpline.h>
+#include <vtkQuaternion.h>
+
 
 //
 
@@ -86,30 +89,43 @@ protected:
   QTimer *m_Timer;                                                          // Timer to update the tracking data
 
   mitk::DataStorage *datastorage;                                           // data storage that contains the navigation data
-  std::vector<mitk::NavigationData::Pointer> m_NavigationDataList;          // list containing the navigation data of the 6 sensors
-  std::vector<mitk::NavigationData::Pointer> m_NodeList;
 
-  vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+  // CALCULATION
+  std::vector<mitk::NavigationData::Pointer> m_NavigationDataList;          // list containing the navigation data of the 6 sensors (INPUT CALCULATION)
+  std::vector<mitk::NavigationData::Pointer> m_NodeList;                    // list containing the nodes for spline interpolation
+  vtkSmartPointer<vtkPoints> pointseven;
+  vtkSmartPointer<vtkPoints> pointsuneven;
+  vtkSmartPointer<vtkPoints> points;                                        // nodes as vtkpoints (OUTPUT CALCULATION)
+  vtkSmartPointer<vtkParametricSpline> splineEven;
+  vtkSmartPointer<vtkParametricSpline> splineUneven;
 
+  vtkSmartPointer<vtkParametricSpline> spline;
   vtkSmartPointer<vtkParametricFunctionSource> functionSource;
+  vtkSmartPointer<vtkParametricFunctionSource> averagedfunctionSource;
 
   vtkSmartPointer<vtkActor> actorSpline;
   vtkSmartPointer<vtkActor> actorPoints;
   vtkSmartPointer<vtkActor> actorTube;
-
-
 
   void SetupNavigation();
 
   void UpdateTrackingData();
 
   void CalculationSelected();
+  int m_selectedCalculationType = 1;
   void PerformCalculation(int calculationType);
+
   void PerformCalculation1();
   mitk::NavigationData::Pointer CalculateMidpointAndOrientation(mitk::NavigationData::Pointer sensor1Data, mitk::NavigationData::Pointer sensor2Data);
+  
+ 
   void PerformCalculation2();
+  
+  void QuaternionToEuler(const mitk::Quaternion &quat, double &pitch, double &yaw, double &roll);
+  mitk::Quaternion EulerToQuaternion(double pitch, double yaw, double roll);
+
   void PerformCalculation3();
-  int m_selectedCalculationType = 1;
+
 
   void InterpolationSelected();
   void PerformInterpolation(int interpolationType); 
