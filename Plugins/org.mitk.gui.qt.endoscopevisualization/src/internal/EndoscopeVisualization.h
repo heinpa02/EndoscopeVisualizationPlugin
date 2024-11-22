@@ -118,27 +118,25 @@ protected:
   void PerformCalculation1();
   mitk::NavigationData::Pointer CalculateMidpointAndOrientation(mitk::NavigationData::Pointer sensor1Data, mitk::NavigationData::Pointer sensor2Data);
   
- 
   void PerformCalculation2();
-  
-  void QuaternionToEuler(const mitk::Quaternion &quat, double &pitch, double &yaw, double &roll);
-  mitk::Quaternion EulerToQuaternion(double pitch, double yaw, double roll);
 
   void PerformCalculation3();
 
 
   void InterpolationSelected();
-  void PerformInterpolation(int interpolationType); 
-  void PerformInterpolation_Parametric();
-  void PerformInterpolation_Kochanek();
-  void PerformInterpolation_Cardinal();
-  void PerformInterpolation_SCurve();
-  void PerformInterpolation5();
+  vtkSmartPointer<vtkParametricSpline> PerformInterpolation(vtkSmartPointer<vtkPoints> punkte, int interpolationType); 
+  vtkSmartPointer<vtkParametricSpline> PerformInterpolation_Parametric(vtkSmartPointer<vtkPoints> punkte);
+  vtkSmartPointer<vtkParametricSpline> PerformInterpolation_Kochanek(vtkSmartPointer<vtkPoints> punkte);
+  vtkSmartPointer<vtkParametricSpline> PerformInterpolation_Cardinal(vtkSmartPointer<vtkPoints> punkte);
+  vtkSmartPointer<vtkParametricSpline> PerformInterpolation_SCurve(vtkSmartPointer<vtkPoints> punkte);
   
   int m_selectedInterpolationType = 1;
+  int m_resolution;
 
   void TubeDiameterChanged(int tubeDiameter);
   int m_selectedTubeDiameter = 10;
+  void TubeCheckboxToggled(bool checked);
+  bool m_TubeActivated = true;
 
   void VisualizePoints();
   void VisualizeSpline();
