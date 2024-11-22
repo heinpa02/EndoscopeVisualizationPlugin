@@ -103,6 +103,10 @@ protected:
   vtkSmartPointer<vtkParametricFunctionSource> functionSource;
   vtkSmartPointer<vtkParametricFunctionSource> averagedfunctionSource;
 
+  mitk::DataNode::Pointer pointSetNode;
+  mitk::DataNode::Pointer splineNode;
+  mitk::DataNode::Pointer tubeNode;
+
   vtkSmartPointer<vtkActor> actorSpline;
   vtkSmartPointer<vtkActor> actorPoints;
   vtkSmartPointer<vtkActor> actorTube;
