@@ -49,6 +49,7 @@ See LICENSE.txt or http://www.mitk.org for details.
 
 #include <vtkParametricFunctionSource.h>
 #include <vtkParametricSpline.h>
+#include <vtkKochanekSpline.h>
 #include <vtkQuaternion.h>
 
 
@@ -83,7 +84,7 @@ protected:
 
   virtual void SetFocus() override;
 
-  Ui::EndoscopeVisualizationControls m_Controls;                            // Ui controls
+  Ui::m_Controls m_Controls;                                                // Ui controls
   mitk::TrackingDeviceSource::Pointer m_Source;                             // connected Tracking Device
     
   QTimer *m_Timer;                                                          // Timer to update the tracking data
@@ -116,37 +117,42 @@ protected:
   void UpdateTrackingData();
 
   void CalculationSelected();
-  int m_selectedCalculationType = 1;
   void PerformCalculation(int calculationType);
-
+  int m_selectedCalculationType = 1;
   void PerformCalculation1();
-  mitk::NavigationData::Pointer CalculateMidpointAndOrientation(mitk::NavigationData::Pointer sensor1Data, mitk::NavigationData::Pointer sensor2Data);
-  
   void PerformCalculation2();
-
   void PerformCalculation3();
-
+  mitk::NavigationData::Pointer CalculateMidpointAndOrientation(mitk::NavigationData::Pointer sensor1Data, mitk::NavigationData::Pointer sensor2Data); 
 
   void InterpolationSelected();
   vtkSmartPointer<vtkParametricSpline> PerformInterpolation(vtkSmartPointer<vtkPoints> punkte, int interpolationType); 
-  vtkSmartPointer<vtkParametricSpline> PerformInterpolation_Parametric(vtkSmartPointer<vtkPoints> punkte);
+  int m_selectedInterpolationType = 1;
   vtkSmartPointer<vtkParametricSpline> PerformInterpolation_Kochanek(vtkSmartPointer<vtkPoints> punkte);
   vtkSmartPointer<vtkParametricSpline> PerformInterpolation_Cardinal(vtkSmartPointer<vtkPoints> punkte);
   vtkSmartPointer<vtkParametricSpline> PerformInterpolation_SCurve(vtkSmartPointer<vtkPoints> punkte);
-  
-  int m_selectedInterpolationType = 1;
   int m_resolution;
+
 
   void TubeDiameterChanged(int tubeDiameter);
   int m_selectedTubeDiameter = 10;
   void TubeCheckboxToggled(bool checked);
-  bool m_TubeActivated = true;
+  bool m_TubeActivated = false;
 
   void VisualizePoints();
   void VisualizeSpline();
   void VisualizeTube();
-
   void VisualizeEndoscope();
+
+
+  //Evaluation
+  
+  mitk::NavigationData::Pointer m_RecordedNavigationData;
+  mitk::PointSet::Pointer m_RecordedPointSet;
+  bool m_RecordingActive = false;
+
+  void RecordPointSet();
+  void PerformEvaluation(); 
+
 
 };
 

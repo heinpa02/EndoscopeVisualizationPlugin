@@ -80,15 +80,16 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <vtkNamedColors.h>
 #include <vtkVertexGlyphFilter.h>
 
-
+#include <vtkCellLocator.h>
+#include <vtkPolyData.h>
+#include <vtkMath.h>
 
 
 const std::string EndoscopeVisualization::VIEW_ID = "org.mitk.views.endoscopevisualization";
 
 
 EndoscopeVisualization::EndoscopeVisualization()
-  : QmitkAbstractView(),
-    m_Source(nullptr)
+  : QmitkAbstractView(), m_Source(nullptr)
 {}
 
 
@@ -97,7 +98,7 @@ EndoscopeVisualization::~EndoscopeVisualization() {}
 
 void EndoscopeVisualization::SetFocus()
 {
-  m_Controls.buttonPerformEndoscopeVisualization->setFocus();
+  m_Controls.button_performEndoscopeVisualization->setFocus();
 }
 
 
@@ -111,59 +112,62 @@ void EndoscopeVisualization::CreateQtPartControl(QWidget *parent)
   connect(m_Timer, &QTimer::timeout, this, &EndoscopeVisualization::UpdateTrackingData);
 
   // VisualizeEndoscope button
-  connect(m_Controls.buttonPerformEndoscopeVisualization, &QPushButton::clicked, this, &EndoscopeVisualization::VisualizeEndoscope);
+  connect(m_Controls.button_performEndoscopeVisualization, &QPushButton::clicked, this, &EndoscopeVisualization::VisualizeEndoscope);
 
   // NavigationDataSourceSelectionWidget
   connect(m_Controls.widget, SIGNAL(NavigationDataSourceSelected(mitk::NavigationDataSource::Pointer)), this, SLOT(SetupNavigation()));
 
   // CalculationSelection radiobuttons
-  connect(m_Controls.Cal1, &QRadioButton::clicked, this, &EndoscopeVisualization::CalculationSelected);
-  connect(m_Controls.Cal2, &QRadioButton::clicked, this, &EndoscopeVisualization::CalculationSelected);
-  connect(m_Controls.Cal3, &QRadioButton::clicked, this, &EndoscopeVisualization::CalculationSelected);
-  m_Controls.Cal1->setChecked(true);
+  connect(m_Controls.button_Calculation1, &QRadioButton::clicked, this, &EndoscopeVisualization::CalculationSelected);
+  connect(m_Controls.button_Calculation2, &QRadioButton::clicked, this, &EndoscopeVisualization::CalculationSelected);
+  connect(m_Controls.button_Calculation3, &QRadioButton::clicked, this, &EndoscopeVisualization::CalculationSelected);
+  m_Controls.button_Calculation1->setChecked(true);
 
   // InterpolationSelection radiobuttons
-  connect(m_Controls.Interpol1, &QRadioButton::clicked, this, &EndoscopeVisualization::InterpolationSelected);
-  connect(m_Controls.Interpol2, &QRadioButton::clicked, this, &EndoscopeVisualization::InterpolationSelected);
-  connect(m_Controls.Interpol3, &QRadioButton::clicked, this, &EndoscopeVisualization::InterpolationSelected);
-  connect(m_Controls.Interpol4, &QRadioButton::clicked, this, &EndoscopeVisualization::InterpolationSelected);
-  m_Controls.Interpol1->setChecked(true);
+  connect(m_Controls.button_InterpolationCardinal, &QRadioButton::clicked, this, &EndoscopeVisualization::InterpolationSelected); 
+  connect(m_Controls.button_InterpolationKochanek, &QRadioButton::clicked, this, &EndoscopeVisualization::InterpolationSelected);
+  connect(m_Controls.button_Interpolation_SCurve, &QRadioButton::clicked, this, &EndoscopeVisualization::InterpolationSelected);
+  m_Controls.button_InterpolationCardinal->setChecked(true);
 
   // TubeDiameterSelection spinbox
-  connect(m_Controls.spinBoxTubeDiameter, QOverload<int>::of(&QSpinBox::valueChanged), this, &EndoscopeVisualization::TubeDiameterChanged);
-  connect(m_Controls.checkBox_Tube, &QCheckBox::toggled, this, &EndoscopeVisualization::TubeCheckboxToggled);
+  connect(m_Controls.spinBox_tubeDiameter, QOverload<int>::of(&QSpinBox::valueChanged), this, &EndoscopeVisualization::TubeDiameterChanged);
+  connect(m_Controls.checkBox_tube, &QCheckBox::toggled, this, &EndoscopeVisualization::TubeCheckboxToggled);
+
+  //PointSetRecording
+  connect(m_Controls.checkBox_pointSetRecording, &QCheckBox::toggled, this, &EndoscopeVisualization::RecordPointSet);
+  connect(m_Controls.button_performEvaluation, &QPushButton::clicked, this, &EndoscopeVisualization::PerformEvaluation);
+  m_Controls.radioButton_spline->setChecked(true);
+  
 }
 
 
 
 void EndoscopeVisualization::VisualizeEndoscope()
 {
-  MITK_INFO << "Erreicht VisualizeEndoscope.";
-
-  datastorage = this->GetDataStorage();
+ datastorage = this->GetDataStorage();
   if (datastorage == nullptr)
   {
     MITK_ERROR << "DataStorage is null!";
     return;
   }
 
-  m_Timer->start(10);  
+  m_Timer->start(100);  
 }
 
 
 void EndoscopeVisualization::CalculationSelected() 
 {
-  if (m_Controls.Cal1->isChecked())
+  if (m_Controls.button_Calculation1->isChecked())
   {
     MITK_INFO << "Calculation 1";
     m_selectedCalculationType = 1;
   }
-  else if (m_Controls.Cal2->isChecked())
+  else if (m_Controls.button_Calculation2->isChecked())
   {
     MITK_INFO << "Calculation 2 ";
     m_selectedCalculationType = 2;
   }
-  else if (m_Controls.Cal3->isChecked())
+  else if (m_Controls.button_Calculation3->isChecked())
   {
     MITK_INFO << "Calculation 3 ";
     m_selectedCalculationType = 3;
@@ -173,32 +177,26 @@ void EndoscopeVisualization::CalculationSelected()
 
 void EndoscopeVisualization::InterpolationSelected()
 {
-  if (m_Controls.Interpol1->isChecked())
+  if (m_Controls.button_InterpolationCardinal->isChecked())
   {
-    MITK_INFO << "Interpolation 1";
+    MITK_INFO << "Interpolation 1 ";
     m_selectedInterpolationType = 1;
   }
-  else if (m_Controls.Interpol2->isChecked())
+  else if (m_Controls.button_InterpolationKochanek->isChecked())
   {
     MITK_INFO << "Interpolation 2 ";
     m_selectedInterpolationType = 2;
   }
-  else if (m_Controls.Interpol3->isChecked())
+  else if (m_Controls.button_Interpolation_SCurve->isChecked())
   {
     MITK_INFO << "Interpolation 3 ";
     m_selectedInterpolationType = 3;
-  }
-  else if (m_Controls.Interpol4->isChecked())
-  {
-    MITK_INFO << "Interpolation 4 ";
-    m_selectedInterpolationType = 4;
   }
 }
 
 
 
 void EndoscopeVisualization::TubeDiameterChanged(int tubediameter) {
-  MITK_INFO << "Durchmesser= " << tubediameter;
   m_selectedTubeDiameter = tubediameter;
 }
 
@@ -230,10 +228,6 @@ void EndoscopeVisualization::SetupNavigation()
 
 void EndoscopeVisualization::UpdateTrackingData()
 {
-  MITK_INFO << "Update trackingdata";
-  
-  // extract tracking data from the navigation data source
-
   m_NavigationDataList.clear();
   if (m_Controls.widget->GetSelectedToolID() < 6)
   {
@@ -244,28 +238,34 @@ void EndoscopeVisualization::UpdateTrackingData()
       m_NavigationDataList.push_back(m_NavigationDataSensor);
     }
   }
-  else{
-    MITK_INFO<< "Additional sensor detected. Make sure the EndoscopeNavigation is plugged into the first three inputs.";
-     mitk::NavigationData::Pointer m_NavigationDataSensor0 = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(0);
-     m_NavigationDataList.push_back(m_NavigationDataSensor0);
-     mitk::NavigationData::Pointer m_NavigationDataSensor1 = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(1);
-     m_NavigationDataList.push_back(m_NavigationDataSensor1);
-     mitk::NavigationData::Pointer m_NavigationDataSensor2 = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(2);
-     m_NavigationDataList.push_back(m_NavigationDataSensor2);
-     mitk::NavigationData::Pointer m_NavigationDataSensor3 = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(4);
-     m_NavigationDataList.push_back(m_NavigationDataSensor3);
-     mitk::NavigationData::Pointer m_NavigationDataSensor4 = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(5);
-     m_NavigationDataList.push_back(m_NavigationDataSensor4);
-     mitk::NavigationData::Pointer m_NavigationDataSensor5 = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(6);
-     m_NavigationDataList.push_back(m_NavigationDataSensor5);
+  else
+  {
+    mitk::NavigationData::Pointer m_NavigationDataSensor0 =
+      m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(0);
+    m_NavigationDataList.push_back(m_NavigationDataSensor0);
+    mitk::NavigationData::Pointer m_NavigationDataSensor1 =
+      m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(1);
+    m_NavigationDataList.push_back(m_NavigationDataSensor1);
+    mitk::NavigationData::Pointer m_NavigationDataSensor2 =
+      m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(2);
+    m_NavigationDataList.push_back(m_NavigationDataSensor2);
+    mitk::NavigationData::Pointer m_NavigationDataSensor3 =
+      m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(4);
+    m_NavigationDataList.push_back(m_NavigationDataSensor3);
+    mitk::NavigationData::Pointer m_NavigationDataSensor4 =
+      m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(5);
+    m_NavigationDataList.push_back(m_NavigationDataSensor4);
+    mitk::NavigationData::Pointer m_NavigationDataSensor5 =
+      m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(6);
+    m_NavigationDataList.push_back(m_NavigationDataSensor5);
   }
- 
-
-  // processing tracking data and visualizing endoscope
 
   PerformCalculation(m_selectedCalculationType);
+
   spline = PerformInterpolation(points, m_selectedInterpolationType);
+
   VisualizePoints();
+
   VisualizeSpline();
 
   if (m_TubeActivated)
@@ -275,12 +275,27 @@ void EndoscopeVisualization::UpdateTrackingData()
 
   this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->RequestUpdate();
 
+  if (m_RecordingActive)
+  {
+    int size = m_RecordedPointSet->GetSize();
+    mitk::NavigationData::Pointer nd = m_RecordedNavigationData;
+
+    if (size > 0)
+    {
+      mitk::Point3D p = m_RecordedPointSet->GetPoint(size - 1);
+      if (p.EuclideanDistanceTo(nd->GetPosition()) > (double)m_Controls.spinBox_pointSetRecording->value())
+        m_RecordedPointSet->InsertPoint(size, nd->GetPosition());
+    }
+    else
+      m_RecordedPointSet->InsertPoint(size, nd->GetPosition());
+  }
 }
+
+
 
 
 void EndoscopeVisualization::PerformCalculation(int calculationType) 
 {
-  // initialize new for next iteration
   m_NodeList.clear();
   points = vtkSmartPointer<vtkPoints>::New();
   functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
@@ -302,62 +317,37 @@ void EndoscopeVisualization::PerformCalculation(int calculationType)
 
 vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolation(vtkSmartPointer<vtkPoints> punkte, int interpolationType)
 {
-  MITK_INFO << "Erreicht PerformInterpolation.";
-
     vtkSmartPointer<vtkParametricSpline> spline = vtkSmartPointer<vtkParametricSpline>::New();
-
     vtkRenderer *vtkRenderer = this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->GetVtkRenderer();
 
       if (pointSetNode.IsNotNull() && datastorage)
     {
       datastorage->Remove(pointSetNode);
-      pointSetNode = nullptr; // Clear the pointer to the old node
+      pointSetNode = nullptr; 
     }
 
-    // Remove the old Spline node if it exists
     if (splineNode.IsNotNull() && datastorage)
     {
       datastorage->Remove(splineNode);
-      splineNode = nullptr; // Clear the pointer to the old node
+      splineNode = nullptr; 
     }
 
-    // Remove the old Tube node if it exists
     if (tubeNode.IsNotNull() && datastorage)
     {
       datastorage->Remove(tubeNode);
-      tubeNode = nullptr; // Clear the pointer to the old node
+      tubeNode = nullptr;
     }
 
-  /*if (actorPoints)
-  {
-    vtkRenderer->RemoveActor(actorPoints);
-    actorPoints = nullptr;
-  }
-  if (actorSpline)
-  {
-    vtkRenderer->RemoveActor(actorSpline);
-    actorSpline = nullptr;
-  }
-  if (actorTube)
-  {
-    vtkRenderer->RemoveActor(actorTube);
-    actorTube = nullptr;
-  } */
-
   
-
   switch (interpolationType)
   {
     case 1:
-      spline = PerformInterpolation_Parametric(punkte);
-      break;
-    case 2:
       spline = PerformInterpolation_Kochanek(punkte);
       break;
-    case 3:
+    case 2:
       spline = PerformInterpolation_Cardinal(punkte);
       break;
-    case 4:
+    case 3:
       spline = PerformInterpolation_SCurve(punkte);
       break;
   }
@@ -374,7 +364,6 @@ vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolatio
 
 void EndoscopeVisualization::PerformCalculation1()
 {
-  MITK_INFO << "Averaging Positions";
 
   mitk::NavigationData::Pointer node1 = mitk::NavigationData::New();
   mitk::NavigationData::Pointer node2 = mitk::NavigationData::New();
@@ -392,7 +381,9 @@ void EndoscopeVisualization::PerformCalculation1()
     mitk::Point3D position = m_NodeList[i]->GetPosition();
     points->SetPoint(i, position[0], position[1], position[2]);
   }
+
 }
+
 
 
 mitk::NavigationData::Pointer EndoscopeVisualization::CalculateMidpointAndOrientation(mitk::NavigationData::Pointer sensor1Data, mitk::NavigationData::Pointer sensor2Data)
@@ -454,7 +445,6 @@ mitk::NavigationData::Pointer EndoscopeVisualization::CalculateMidpointAndOrient
 
 void EndoscopeVisualization::PerformCalculation2()
 {
-  MITK_INFO << "Averaging Positions and adding point offset the x-axis ";
 
   mitk::NavigationData::Pointer node1 = mitk::NavigationData::New();
   mitk::NavigationData::Pointer node2 = mitk::NavigationData::New();
@@ -465,7 +455,6 @@ void EndoscopeVisualization::PerformCalculation2()
   m_NodeList.push_back(node1);
   m_NodeList.push_back(node2);
   m_NodeList.push_back(node3);
-
 
   for (size_t i = 0; i < m_NodeList.size(); ++i)
   {
@@ -481,20 +470,21 @@ void EndoscopeVisualization::PerformCalculation2()
       itk::Matrix<double, 3, 3> rotationMatrix;
       rotationMatrix = orientation.rotation_matrix_transpose().transpose();
 
+      double offset = m_Controls.spinBox_offset->value();
+
       itk::Vector<double, 3> z;
       z[0] = 0.0;
       z[1] = 0.0;
       z[2] = -1.0;
 
       itk::Vector<double, 3> zAxisLocal = rotationMatrix * z;
-      itk::Vector<double, 3> displacement = zAxisLocal * 3;
+      itk::Vector<double, 3> displacement = zAxisLocal * offset;
 
       mitk::Point3D newPosition;
       newPosition[0] = position[0] + displacement[0];
       newPosition[1] = position[1] + displacement[1];
       newPosition[2] = position[2] + displacement[2];
 
-      MITK_INFO << newPosition;
       points->InsertNextPoint(newPosition[0], newPosition[1], newPosition[2]);
     }
   }
@@ -547,38 +537,27 @@ void EndoscopeVisualization::PerformCalculation3()
 }
 
 
-vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolation_Parametric(vtkSmartPointer<vtkPoints> punkte)
+vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolation_Kochanek(vtkSmartPointer<vtkPoints> punkte)
 {
-  vtkNew<vtkNamedColors> colors;
   int numberOfPoints = punkte->GetNumberOfPoints();
 
-  vtkNew<vtkParametricSpline> spline;
-  spline->SetPoints(punkte);
-
-  m_resolution = 50 * numberOfPoints;
-
-  return spline;
-}
-
-
-vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolation_Kochanek(
-  vtkSmartPointer<vtkPoints> punkte)
-{
-  vtkNew<vtkNamedColors> colors;
-  int numberOfPoints = punkte->GetNumberOfPoints();
+  double bias = m_Controls.doubleSpinBox_bias->value();
+  double tension = m_Controls.doubleSpinBox_tension->value();
+  double continuity = m_Controls.doubleSpinBox_continuity->value();
 
   vtkNew<vtkKochanekSpline> xSpline;
-  xSpline->SetDefaultBias(0);
-  xSpline->SetDefaultTension(0);
-  xSpline->SetDefaultContinuity(0);
+  xSpline->SetDefaultBias(bias);
+  xSpline->SetDefaultTension(tension);
+  xSpline->SetDefaultContinuity(continuity);
   vtkNew<vtkKochanekSpline> ySpline;
-  ySpline->SetDefaultBias(0);
-  ySpline->SetDefaultTension(0);
-  ySpline->SetDefaultContinuity(0);
+  ySpline->SetDefaultBias(bias);
+  ySpline->SetDefaultTension(tension);
+  ySpline->SetDefaultContinuity(continuity);
   vtkNew<vtkKochanekSpline> zSpline;
-  zSpline->SetDefaultBias(0);
-  zSpline->SetDefaultTension(0);
-  zSpline->SetDefaultContinuity(0);
+  zSpline->SetDefaultBias(bias);
+  zSpline->SetDefaultTension(tension);
+  zSpline->SetDefaultContinuity(continuity);
+
   vtkNew<vtkParametricSpline> spline;
 
   spline->SetXSpline(xSpline);
@@ -586,11 +565,7 @@ vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolatio
   spline->SetZSpline(zSpline);
   spline->SetPoints(punkte);
 
-  functionSource->SetParametricFunction(spline);
-  functionSource->SetUResolution(50 * numberOfPoints);
-  functionSource->SetVResolution(50 * numberOfPoints);
-  functionSource->SetWResolution(50 * numberOfPoints);
-  functionSource->Update();
+  m_resolution = 50 * numberOfPoints;
 
   return spline;
 } 
@@ -598,7 +573,6 @@ vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolatio
 
 vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolation_Cardinal(vtkSmartPointer<vtkPoints> punkte)
 {
-  vtkNew<vtkNamedColors> colors;
   int numberOfPoints = punkte->GetNumberOfPoints();
 
   vtkNew<vtkCardinalSpline> xSpline;
@@ -609,6 +583,7 @@ vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolatio
   spline->SetXSpline(xSpline);
   spline->SetYSpline(ySpline);
   spline->SetZSpline(zSpline);
+
   spline->SetPoints(punkte);
 
   m_resolution = 50 * numberOfPoints;
@@ -619,7 +594,6 @@ vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolatio
 
 vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolation_SCurve(vtkSmartPointer<vtkPoints> punkte)
 {
-  vtkNew<vtkNamedColors> colors;
   int numberOfPoints = punkte->GetNumberOfPoints();
 
   vtkNew<vtkSCurveSpline> xSpline;
@@ -655,15 +629,14 @@ void EndoscopeVisualization::VisualizePoints()
   if (!pointSetNode)
   {
     pointSetNode = mitk::DataNode::New();
-  }
-  pointSetNode->SetData(pointSet);
-  pointSetNode->GetPropertyList()->SetProperty("color", mitk::ColorProperty::New(0.0, 1.0, 1.0)); // Peacock color
-  pointSetNode->GetPropertyList()->SetProperty("point size", mitk::FloatProperty::New(4.0));      // Point size
-
-  if (datastorage)
-  {
     datastorage->Add(pointSetNode);
+    pointSetNode->SetName("Nodes");
+    pointSetNode->GetPropertyList()->SetProperty("color", mitk::ColorProperty::New(0.0, 1.0, 0.0));
+    pointSetNode->GetPropertyList()->SetProperty("point size", mitk::FloatProperty::New(10.0));
   }
+
+  pointSetNode->SetData(pointSet);
+
 }
 
 void EndoscopeVisualization::VisualizeSpline() 
@@ -677,16 +650,14 @@ void EndoscopeVisualization::VisualizeSpline()
   if (!splineNode)
   {
     splineNode = mitk::DataNode::New();
-  }
-  splineNode->SetData(splineSurface);
-  splineNode->GetPropertyList()->SetProperty("color", mitk::ColorProperty::New(0.18, 0.31, 0.31)); // Dark Slate Grey
-  splineNode->GetPropertyList()->SetProperty("line width", mitk::FloatProperty::New(3.0));         // Line width
-
-
-  if (datastorage)
-  {
     datastorage->Add(splineNode);
+    splineNode->SetName("Spline");
+    splineNode->GetPropertyList()->SetProperty("color", mitk::ColorProperty::New(0.0, 0.0, 0.0));
+    splineNode->GetPropertyList()->SetProperty("line width", mitk::FloatProperty::New(10.0));
   }
+
+   splineNode->SetData(splineSurface);
+
 }
 
 
@@ -694,7 +665,7 @@ void EndoscopeVisualization::VisualizeTube()
 {
   vtkSmartPointer<vtkTubeFilter> tubeFilter = vtkSmartPointer<vtkTubeFilter>::New();
   tubeFilter->SetInputConnection(functionSource->GetOutputPort());
-  tubeFilter->SetRadius(m_selectedTubeDiameter / 2);
+  tubeFilter->SetRadius(m_selectedTubeDiameter / 2.0);
   tubeFilter->SetNumberOfSides(20);
   tubeFilter->Update();
 
@@ -704,14 +675,123 @@ void EndoscopeVisualization::VisualizeTube()
   if (!tubeNode)
   {
     tubeNode = mitk::DataNode::New();
-  }
-  
-  tubeNode->SetData(tubeSurface);
-  tubeNode->GetPropertyList()->SetProperty("color", mitk::ColorProperty::New(0.0, 1.0, 0.0)); 
-  tubeNode->GetPropertyList()->SetProperty("opacity", mitk::FloatProperty::New(0.5));
-
-  if (datastorage)
-  {
+    tubeNode->SetName("Tube");
+    tubeNode->GetPropertyList()->SetProperty("color", mitk::ColorProperty::New(1, 1, 1));
+    tubeNode->GetPropertyList()->SetProperty("opacity", mitk::FloatProperty::New(0.5));
     datastorage->Add(tubeNode);
   }
+
+  tubeNode->SetData(tubeSurface);
+ 
 }
+
+void EndoscopeVisualization::RecordPointSet()
+{
+  if (m_Controls.checkBox_pointSetRecording->isChecked())
+  {
+    if (m_Controls.widget_2->GetSelectedToolID() == -1)
+    {
+      QMessageBox::warning(nullptr, "Error", "No tool selected for point set recording!");
+      m_Controls.checkBox_pointSetRecording->setChecked(false);
+      return;
+    }
+    m_RecordedNavigationData = m_Controls.widget_2->GetSelectedNavigationDataSource()->GetOutput(m_Controls.widget_2->GetSelectedToolID());
+
+    mitk::DataNode::Pointer dn = datastorage->GetNamedNode("Evaluation Points");
+    if (m_RecordedPointSet.IsNull() || dn.IsNull())
+    {
+      m_RecordedPointSet = nullptr;
+      m_RecordedPointSet = mitk::PointSet::New();
+      mitk::DataNode::Pointer EvaluationDataNode = mitk::DataNode::New();
+      EvaluationDataNode->SetName("Evaluation Points");
+      EvaluationDataNode->GetPropertyList()->SetProperty("color", mitk::ColorProperty::New(1.0, 0.0, 0.0));
+      EvaluationDataNode->GetPropertyList()->SetProperty("point size", mitk::FloatProperty::New(100.0f));
+      EvaluationDataNode->SetData(m_RecordedPointSet);
+      datastorage->Add(EvaluationDataNode);
+    }
+    else
+    {
+      m_RecordedPointSet->Clear();
+    }
+    m_RecordingActive = true;
+  }
+  else
+  {
+    m_RecordingActive = false;
+  }
+}
+
+void EndoscopeVisualization::PerformEvaluation()
+{
+  mitk::DataNode::Pointer evaPointSetNode = datastorage->GetNamedNode("Evaluation Points");
+  mitk::PointSet::Pointer evaPointSet = dynamic_cast<mitk::PointSet *>(evaPointSetNode->GetData());
+
+  std::string node;
+  if (m_Controls.radioButton_spline->isChecked() == true)
+  {
+    node = "Spline";
+  }
+  else if (m_Controls.radioButton_tube->isChecked() == true)
+  {
+    node = "Tube";
+  } 
+ 
+  mitk::DataNode::Pointer evaSplineNode = datastorage->GetNamedNode(node);
+  mitk::Surface::Pointer splineSurface = dynamic_cast<mitk::Surface *>(evaSplineNode->GetData());
+  vtkSmartPointer<vtkPolyData> polyDataEval = splineSurface->GetVtkPolyData();
+
+  vtkSmartPointer<vtkCellLocator> cellLocator = vtkSmartPointer<vtkCellLocator>::New();
+  cellLocator->SetDataSet(polyDataEval);
+  cellLocator->BuildLocator();
+
+  int numPoints = evaPointSet->GetSize();
+  double totalDistance = 0.0;
+  double totalSquaredDistance = 0.0;
+  std::vector<double> distances;
+
+  for (int i = 0; i < numPoints; ++i)
+  {
+    mitk::Point3D point3D = evaPointSet->GetPoint(i);
+    const double point[3] = {point3D[0], point3D[1], point3D[2]};
+
+    double closestPoint[3];
+    double closestDistance2 = VTK_DOUBLE_MAX;
+
+    vtkGenericCell *cell = vtkGenericCell::New();
+    vtkIdType cellId;
+    int subId;
+
+    cellLocator->FindClosestPoint(point, closestPoint, cell, cellId, subId, closestDistance2);
+
+    double distance = std::sqrt(closestDistance2);
+    
+    totalDistance += distance;
+    totalSquaredDistance += closestDistance2;
+
+    distances.push_back(distance);
+
+    cell->Delete();
+  }
+
+  double meanDistance = totalDistance / numPoints;
+
+  double mse = totalSquaredDistance / numPoints;
+
+  double rmse = std::sqrt(mse);
+
+  double sumSquaredDifferences = 0.0;
+  for (double dist : distances)
+  {
+    sumSquaredDifferences += std::pow(dist - meanDistance, 2);
+  }
+  double standardDeviation = std::sqrt(sumSquaredDifferences / numPoints);
+
+  m_Controls.output->setText("Mean Distance: " + QString::number(meanDistance) + +"<br>" +
+                             " MSE: " + QString::number(mse) + "<br>" +
+                            " RMSE: " + QString::number(rmse) + "<br>" +
+                            " Standard Deviation: " + QString::number(standardDeviation));
+
+}
+
+
+
