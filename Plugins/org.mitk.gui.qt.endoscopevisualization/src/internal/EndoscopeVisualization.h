@@ -122,6 +122,7 @@ protected:
   void PerformCalculation1();
   void PerformCalculation2();
   void PerformCalculation3();
+  void PerformCalculation4();
   mitk::NavigationData::Pointer CalculateMidpointAndOrientation(mitk::NavigationData::Pointer sensor1Data, mitk::NavigationData::Pointer sensor2Data); 
 
   void InterpolationSelected();

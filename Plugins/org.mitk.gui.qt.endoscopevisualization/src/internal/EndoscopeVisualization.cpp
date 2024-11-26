@@ -289,6 +289,7 @@ void EndoscopeVisualization::UpdateTrackingData()
     else
       m_RecordedPointSet->InsertPoint(size, nd->GetPosition());
   }
+
 }
 
 
@@ -310,6 +311,9 @@ void EndoscopeVisualization::PerformCalculation(int calculationType)
       break;
     case 3:
       PerformCalculation3();
+      break;
+    case 4:
+      PerformCalculation4();
       break;
   }
 }
@@ -418,9 +422,10 @@ mitk::NavigationData::Pointer EndoscopeVisualization::CalculateMidpointAndOrient
   double dy = position2[1] - position1[1];
   double yaw_m = std::atan2(dy, dx);
 
-  vtkQuaternion<double> vtkZ(yaw_m, 0, 0, 1);
+  double halfYaw = yaw_m / 2.0;
+  vtkQuaternion<double> vtkYaw(cos(halfYaw), 0, 0, sin(halfYaw));
 
-  vtkQuaternion<double> combined = vtkZ * vtkMidOri;
+  vtkQuaternion<double> combined = vtkMidOri * vtkYaw;
   
   double angleini = vtkMidOri.GetW();
   double xini = vtkMidOri.GetX();
@@ -478,12 +483,15 @@ void EndoscopeVisualization::PerformCalculation2()
       z[2] = -1.0;
 
       itk::Vector<double, 3> zAxisLocal = rotationMatrix * z;
+
+      zAxisLocal = -zAxisLocal;
+
       itk::Vector<double, 3> displacement = zAxisLocal * offset;
 
       mitk::Point3D newPosition;
-      newPosition[0] = position[0] + displacement[0];
-      newPosition[1] = position[1] + displacement[1];
-      newPosition[2] = position[2] + displacement[2];
+      newPosition[0] = position[0] - displacement[0];
+      newPosition[1] = position[1] - displacement[1];
+      newPosition[2] = position[2] - displacement[2];
 
       points->InsertNextPoint(newPosition[0], newPosition[1], newPosition[2]);
     }
@@ -534,6 +542,10 @@ void EndoscopeVisualization::PerformCalculation3()
     points->InsertNextPoint(midpoint);
 
   }
+}
+
+void EndoscopeVisualization::PerformCalculation4() {
+
 }
 
 

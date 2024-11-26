@@ -25,12 +25,21 @@
      <property name="whatsThis">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
+     <property name="styleSheet">
+      <string notr="true"/>
+     </property>
+     <property name="tabPosition">
+      <enum>QTabWidget::North</enum>
+     </property>
      <property name="currentIndex">
       <number>0</number>
      </property>
      <widget class="QWidget" name="Page1_Visualization">
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
       <attribute name="title">
-       <string/>
+       <string>Endoscope Visualization</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
@@ -51,17 +60,10 @@
           <string>Node Calculation</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
-          <item row="0" column="0" colspan="3">
-           <widget class="QRadioButton" name="button_Calculation1">
+          <item row="9" column="0" colspan="3">
+           <widget class="QRadioButton" name="button_Calculation3">
             <property name="text">
-             <string>3 x 2 parallel sensors (average position)</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0" colspan="3">
-           <widget class="QRadioButton" name="button_Calculation2">
-            <property name="text">
-             <string>3 x 2 parallel sensors (average position and orientation + offset)</string>
+             <string>1 x 2 parallel sensors + 4 variable sensors (average of two splines)</string>
             </property>
            </widget>
           </item>
@@ -85,13 +87,6 @@
             </property>
            </spacer>
           </item>
-          <item row="9" column="0" colspan="3">
-           <widget class="QRadioButton" name="button_Calculation3">
-            <property name="text">
-             <string>1 x 2 parallel sensors + 4 variable sensors (average of two splines)</string>
-            </property>
-           </widget>
-          </item>
           <item row="2" column="5">
            <widget class="QSpinBox" name="spinBox_offset">
             <property name="minimum">
@@ -102,6 +97,20 @@
             </property>
             <property name="value">
              <number>1</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0" colspan="3">
+           <widget class="QRadioButton" name="button_Calculation1">
+            <property name="text">
+             <string>3 x 2 parallel sensors (average position)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="3">
+           <widget class="QRadioButton" name="button_Calculation2">
+            <property name="text">
+             <string>3 x 2 parallel sensors (average position and orientation + offset)</string>
             </property>
            </widget>
           </item>
@@ -309,7 +318,7 @@
      </widget>
      <widget class="QWidget" name="Page2_Evaluation">
       <attribute name="title">
-       <string/>
+       <string>Evaluation</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
