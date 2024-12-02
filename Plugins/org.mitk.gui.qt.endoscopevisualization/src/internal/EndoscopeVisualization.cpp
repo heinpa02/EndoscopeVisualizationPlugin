@@ -61,7 +61,7 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
-#include <vtkRenderWindowInteractor.h>
+
 
 #include <vtkSmartPointer.h>
 #include "vtkSpline.h"
@@ -89,7 +89,8 @@ const std::string EndoscopeVisualization::VIEW_ID = "org.mitk.views.endoscopevis
 
 
 EndoscopeVisualization::EndoscopeVisualization()
-  : QmitkAbstractView(), m_Source(nullptr)
+  : QmitkAbstractView(), m_Source(nullptr), CameraView(false), VirtualView(nullptr)
+
 {}
 
 
@@ -121,6 +122,7 @@ void EndoscopeVisualization::CreateQtPartControl(QWidget *parent)
   connect(m_Controls.button_Calculation1, &QRadioButton::clicked, this, &EndoscopeVisualization::CalculationSelected);
   connect(m_Controls.button_Calculation2, &QRadioButton::clicked, this, &EndoscopeVisualization::CalculationSelected);
   connect(m_Controls.button_Calculation3, &QRadioButton::clicked, this, &EndoscopeVisualization::CalculationSelected);
+  connect(m_Controls.button_Calculation4, &QRadioButton::clicked, this, &EndoscopeVisualization::CalculationSelected);
   m_Controls.button_Calculation1->setChecked(true);
 
   // InterpolationSelection radiobuttons
@@ -137,6 +139,9 @@ void EndoscopeVisualization::CreateQtPartControl(QWidget *parent)
   connect(m_Controls.checkBox_pointSetRecording, &QCheckBox::toggled, this, &EndoscopeVisualization::RecordPointSet);
   connect(m_Controls.button_performEvaluation, &QPushButton::clicked, this, &EndoscopeVisualization::PerformEvaluation);
   m_Controls.radioButton_spline->setChecked(true);
+
+  //CameraView
+  connect(m_Controls.ActivateSimulatedView, &QCheckBox::toggled, this, &EndoscopeVisualization::VirtualCamera);
   
 }
 
@@ -171,6 +176,11 @@ void EndoscopeVisualization::CalculationSelected()
   {
     MITK_INFO << "Calculation 3 ";
     m_selectedCalculationType = 3;
+  }
+  else if (m_Controls.button_Calculation4->isChecked())
+  {
+    MITK_INFO << "Calculation 4 ";
+    m_selectedCalculationType = 4;
   }
 }
 
@@ -273,8 +283,6 @@ void EndoscopeVisualization::UpdateTrackingData()
     VisualizeTube();
   }
 
-  this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->RequestUpdate();
-
   if (m_RecordingActive)
   {
     int size = m_RecordedPointSet->GetSize();
@@ -288,6 +296,13 @@ void EndoscopeVisualization::UpdateTrackingData()
     }
     else
       m_RecordedPointSet->InsertPoint(size, nd->GetPosition());
+  }
+
+  if (CameraView && VirtualView.IsNotNull())
+  {
+    node1 = CalculateMidpointAndOrientation(m_NavigationDataList[0], m_NavigationDataList[1]);
+    VirtualView->SetInput(node1);
+    VirtualView->Update();
   }
 
 }
@@ -346,10 +361,10 @@ vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolatio
   switch (interpolationType)
   {
     case 1:
-      spline = PerformInterpolation_Kochanek(punkte);
+      spline = PerformInterpolation_Cardinal(punkte);
       break;
     case 2:
-      spline = PerformInterpolation_Cardinal(punkte);
+      spline = PerformInterpolation_Kochanek(punkte); 
       break;
     case 3:
       spline = PerformInterpolation_SCurve(punkte);
@@ -546,8 +561,121 @@ void EndoscopeVisualization::PerformCalculation3()
 
 void EndoscopeVisualization::PerformCalculation4() {
 
+  pointseven = vtkSmartPointer<vtkPoints>::New();
+  pointsuneven = vtkSmartPointer<vtkPoints>::New();
+
+  for (size_t i = 0; i < m_NavigationDataList.size(); ++i)
+  {
+    mitk::Point3D position = m_NavigationDataList[i]->GetPosition();
+    mitk::Quaternion orientation = m_NavigationDataList[i]->GetOrientation();
+
+    if (i % 2 == 0)
+    {
+      pointseven->InsertNextPoint(position[0], position[1], position[2]);
+      orientation.normalize();
+
+      itk::Matrix<double, 3, 3> rotationMatrix;
+      rotationMatrix = orientation.rotation_matrix_transpose().transpose();
+
+      double offset = m_Controls.spinBox_offset->value();
+
+      itk::Vector<double, 3> z;
+      z[0] = 0.0;
+      z[1] = 0.0;
+      z[2] = -1.0;
+
+      itk::Vector<double, 3> zAxisLocal = rotationMatrix * z;
+
+      zAxisLocal = -zAxisLocal;
+
+      itk::Vector<double, 3> displacement = zAxisLocal * offset;
+
+      mitk::Point3D newPosition;
+      newPosition[0] = position[0] - displacement[0];
+      newPosition[1] = position[1] - displacement[1];
+      newPosition[2] = position[2] - displacement[2];
+
+      pointseven->InsertNextPoint(newPosition[0], newPosition[1], newPosition[2]);
+    }
+    else
+    {
+      pointsuneven->InsertNextPoint(position[0], position[1], position[2]);
+      orientation.normalize();
+
+      itk::Matrix<double, 3, 3> rotationMatrix;
+      rotationMatrix = orientation.rotation_matrix_transpose().transpose();
+
+      double offset = m_Controls.spinBox_offset->value();
+
+      itk::Vector<double, 3> z;
+      z[0] = 0.0;
+      z[1] = 0.0;
+      z[2] = -1.0;
+
+      itk::Vector<double, 3> zAxisLocal = rotationMatrix * z;
+
+      zAxisLocal = -zAxisLocal;
+
+      itk::Vector<double, 3> displacement = zAxisLocal * offset;
+
+      mitk::Point3D newPosition;
+      newPosition[0] = position[0] - displacement[0];
+      newPosition[1] = position[1] - displacement[1];
+      newPosition[2] = position[2] - displacement[2];
+
+      pointsuneven->InsertNextPoint(newPosition[0], newPosition[1], newPosition[2]);
+    }
+  }
+
+
+
+  splineEven = PerformInterpolation(pointseven, m_selectedInterpolationType);
+  splineUneven = PerformInterpolation(pointsuneven, m_selectedInterpolationType);
+
+  int numSteps = 10;
+  points = vtkSmartPointer<vtkPoints>::New();
+
+  for (int i = 0; i < numSteps; ++i)
+  {
+    double t_value = i / double(numSteps - 1);
+    double *t = &t_value;
+    double point1[3];
+    double Du[9];
+    splineEven->Evaluate(t, point1, Du);
+    double point2[3];
+    splineUneven->Evaluate(t, point2, Du);
+
+    double midpoint[3];
+    for (int j = 0; j < 3; ++j)
+    {
+      midpoint[j] = point1[j] + 0.5 * (point2[j] - point1[j]);
+    }
+
+    points->InsertNextPoint(midpoint);
+  }
+
 }
 
+
+vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolation_Cardinal(vtkSmartPointer<vtkPoints> punkte)
+{
+  int numberOfPoints = punkte->GetNumberOfPoints();
+
+  vtkNew<vtkCardinalSpline> xSpline;
+  vtkNew<vtkCardinalSpline> ySpline;
+  vtkNew<vtkCardinalSpline> zSpline;
+  vtkNew<vtkParametricSpline> spline;
+
+  spline->SetXSpline(xSpline);
+  spline->SetYSpline(ySpline);
+  spline->SetZSpline(zSpline);
+
+  spline->SetPoints(punkte);
+
+  m_resolution = 50 * numberOfPoints;
+
+  return spline;
+}
 
 vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolation_Kochanek(vtkSmartPointer<vtkPoints> punkte)
 {
@@ -581,27 +709,6 @@ vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolatio
 
   return spline;
 } 
- 
-
-vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolation_Cardinal(vtkSmartPointer<vtkPoints> punkte)
-{
-  int numberOfPoints = punkte->GetNumberOfPoints();
-
-  vtkNew<vtkCardinalSpline> xSpline;
-  vtkNew<vtkCardinalSpline> ySpline;
-  vtkNew<vtkCardinalSpline> zSpline;
-  vtkNew<vtkParametricSpline> spline;
-
-  spline->SetXSpline(xSpline);
-  spline->SetYSpline(ySpline);
-  spline->SetZSpline(zSpline);
-
-  spline->SetPoints(punkte);
-
-  m_resolution = 50 * numberOfPoints;
-
-  return spline;
-}
 
 
 vtkSmartPointer<vtkParametricSpline> EndoscopeVisualization::PerformInterpolation_SCurve(vtkSmartPointer<vtkPoints> punkte)
@@ -805,5 +912,56 @@ void EndoscopeVisualization::PerformEvaluation()
 
 }
 
+
+void EndoscopeVisualization::VirtualCamera(bool on)
+{
+  if (on)
+  {
+      
+      node1 = CalculateMidpointAndOrientation(m_NavigationDataList[0], m_NavigationDataList[1]);
+
+      if (!VirtualView)
+      {
+        VirtualView = mitk::CameraVisualization::New();
+      }
+
+      VirtualView->SetInput(node1);
+
+      mitk::Vector3D viewDirection;
+      viewDirection[0] = (int)(m_Controls.NeedleViewX->isChecked());
+      viewDirection[1] = (int)(m_Controls.NeedleViewY->isChecked());
+      viewDirection[2] = (int)(m_Controls.NeedleViewZ->isChecked());
+      if (m_Controls.NeedleUpInvert->isChecked())
+        viewDirection *= -1;
+      VirtualView->SetDirectionOfProjectionInToolCoordinates(viewDirection);
+
+      mitk::Vector3D viewUpVector;
+      viewUpVector[0] = (int)(m_Controls.NeedleUpX->isChecked());
+      viewUpVector[1] = (int)(m_Controls.NeedleUpY->isChecked());
+      viewUpVector[2] = (int)(m_Controls.NeedleUpZ->isChecked());
+      if (m_Controls.NeedleUpInvert->isChecked())
+        viewUpVector *= -1;
+      VirtualView->SetViewUpInToolCoordinates(viewUpVector);
+
+
+       mitk::BaseRenderer::Pointer renderer =
+        this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer();; 
+
+      VirtualView->SetRenderer(renderer);
+
+      CameraView = true;
+      m_Controls.ViewDirectionBox->setEnabled(false);
+      m_Controls.ViewUpBox->setEnabled(false);
+
+  }
+  else
+  {
+    VirtualView = nullptr;
+    CameraView = false;
+
+    m_Controls.ViewDirectionBox->setEnabled(true);
+    m_Controls.ViewUpBox->setEnabled(true);
+  }
+}
 
 

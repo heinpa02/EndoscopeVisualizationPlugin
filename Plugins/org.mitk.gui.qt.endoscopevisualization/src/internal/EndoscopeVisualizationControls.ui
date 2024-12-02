@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>621</width>
+    <width>767</width>
     <height>563</height>
    </rect>
   </property>
@@ -21,24 +21,23 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QTabWidget" name="TabWidget">
+    <widget class="QToolBox" name="ToolBox">
      <property name="whatsThis">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="styleSheet">
       <string notr="true"/>
      </property>
-     <property name="tabPosition">
-      <enum>QTabWidget::North</enum>
-     </property>
-     <property name="currentIndex">
-      <number>0</number>
-     </property>
-     <widget class="QWidget" name="Page1_Visualization">
-      <property name="styleSheet">
-       <string notr="true"/>
+     <widget class="QWidget" name="ToolBoxPage1">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>735</width>
+        <height>466</height>
+       </rect>
       </property>
-      <attribute name="title">
+      <attribute name="label">
        <string>Endoscope Visualization</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -60,10 +59,17 @@
           <string>Node Calculation</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
-          <item row="9" column="0" colspan="3">
-           <widget class="QRadioButton" name="button_Calculation3">
+          <item row="4" column="0">
+           <widget class="QRadioButton" name="button_Calculation4">
             <property name="text">
-             <string>1 x 2 parallel sensors + 4 variable sensors (average of two splines)</string>
+             <string>Combi</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="3">
+           <widget class="QRadioButton" name="button_Calculation2">
+            <property name="text">
+             <string>3 x 2 parallel sensors (average position and orientation + offset)</string>
             </property>
            </widget>
           </item>
@@ -73,19 +79,6 @@
              <string>Offset</string>
             </property>
            </widget>
-          </item>
-          <item row="2" column="3">
-           <spacer name="horizontalSpacer_2">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
           </item>
           <item row="2" column="5">
            <widget class="QSpinBox" name="spinBox_offset">
@@ -107,10 +100,23 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0" colspan="3">
-           <widget class="QRadioButton" name="button_Calculation2">
+          <item row="2" column="3">
+           <spacer name="horizontalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="3" column="0">
+           <widget class="QRadioButton" name="button_Calculation3">
             <property name="text">
-             <string>3 x 2 parallel sensors (average position and orientation + offset)</string>
+             <string>1 x 2 parallel sensors + 4 variable sensors (average of two splines)</string>
             </property>
            </widget>
           </item>
@@ -316,8 +322,16 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="Page2_Evaluation">
-      <attribute name="title">
+     <widget class="QWidget" name="ToolBoxPage2">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>749</width>
+        <height>455</height>
+       </rect>
+      </property>
+      <attribute name="label">
        <string>Evaluation</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -408,6 +422,158 @@
        </item>
        <item>
         <spacer name="verticalSpacer2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="ToolBoxPage3">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>749</width>
+        <height>455</height>
+       </rect>
+      </property>
+      <attribute name="label">
+       <string>Camera View</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_8">
+       <item>
+        <widget class="QGroupBox" name="ViewDirectionBox">
+         <property name="title">
+          <string>Endoscope View Direction (in Tool Coordinates)</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_5">
+            <item>
+             <widget class="QRadioButton" name="NeedleViewX">
+              <property name="text">
+               <string>X</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="NeedleViewY">
+              <property name="text">
+               <string>Y</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="NeedleViewZ">
+              <property name="text">
+               <string>Z</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_6">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="NeedleViewInvert">
+            <property name="text">
+             <string>Invert</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="ViewUpBox">
+         <property name="title">
+          <string>Endoscope Up Vector (in Tool Coordinates)</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_7">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_6">
+            <item>
+             <widget class="QRadioButton" name="NeedleUpX">
+              <property name="text">
+               <string>X</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="NeedleUpY">
+              <property name="text">
+               <string>Y</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="NeedleUpZ">
+              <property name="text">
+               <string>Z</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_7">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="NeedleUpInvert">
+            <property name="text">
+             <string>Invert</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ActivateSimulatedView">
+         <property name="text">
+          <string>Activate simulated endoscopic view</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="CamWidget" native="true"/>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>

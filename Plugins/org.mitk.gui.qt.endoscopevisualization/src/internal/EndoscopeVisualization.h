@@ -52,6 +52,7 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <vtkKochanekSpline.h>
 #include <vtkQuaternion.h>
 
+#include <mitkCameraVisualization.h>
 
 //
 
@@ -153,6 +154,14 @@ protected:
 
   void RecordPointSet();
   void PerformEvaluation(); 
+
+
+  //CameraView
+  vtkRenderer *newVtkRenderer;
+  mitk::NavigationData::Pointer node1 = mitk::NavigationData::New();
+  void VirtualCamera(bool on);
+  mitk::CameraVisualization::Pointer VirtualView;
+  bool CameraView;
 
 
 };
