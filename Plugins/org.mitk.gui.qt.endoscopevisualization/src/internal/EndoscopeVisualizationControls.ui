@@ -32,13 +32,13 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>0</y>
-        <width>735</width>
-        <height>466</height>
+        <y>-35</y>
+        <width>732</width>
+        <height>520</height>
        </rect>
       </property>
       <attribute name="label">
-       <string>Endoscope Visualization</string>
+       <string>Endoscope Visualization Plugin</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
@@ -54,69 +54,262 @@
         </widget>
        </item>
        <item>
-        <widget class="QGroupBox" name="NodeCalulation">
+        <widget class="QGroupBox" name="groupBox_2">
          <property name="title">
-          <string>Node Calculation</string>
+          <string>Visualization</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout_2">
-          <item row="4" column="0">
-           <widget class="QRadioButton" name="button_Calculation4">
-            <property name="text">
-             <string>Combi</string>
+         <layout class="QVBoxLayout" name="verticalLayout_7">
+          <item>
+           <widget class="QGroupBox" name="NodeCalulation">
+            <property name="title">
+             <string>Node Calculation</string>
             </property>
+            <layout class="QGridLayout" name="gridLayout_2">
+             <item row="1" column="0" colspan="3">
+              <widget class="QRadioButton" name="button_Calculation1">
+               <property name="text">
+                <string>3 x 2 parallel sensors (average position)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0">
+              <widget class="QRadioButton" name="button_Calculation4">
+               <property name="text">
+                <string>Combi</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0">
+              <widget class="QRadioButton" name="button_Calculation3">
+               <property name="text">
+                <string>1 x 2 parallel sensors + 4 variable sensors (average of two splines)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="3">
+              <spacer name="horizontalSpacer_2">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="3" column="5">
+              <widget class="QSpinBox" name="spinBox_offset">
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>20</number>
+               </property>
+               <property name="value">
+                <number>1</number>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0" colspan="3">
+              <widget class="QRadioButton" name="button_Calculation2">
+               <property name="text">
+                <string>3 x 2 parallel sensors (average position and orientation + offset)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="4">
+              <widget class="QLabel" name="label_offset">
+               <property name="text">
+                <string>Offset</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </widget>
           </item>
-          <item row="2" column="0" colspan="3">
-           <widget class="QRadioButton" name="button_Calculation2">
-            <property name="text">
-             <string>3 x 2 parallel sensors (average position and orientation + offset)</string>
+          <item>
+           <widget class="QGroupBox" name="InterpolationSelection">
+            <property name="enabled">
+             <bool>true</bool>
             </property>
+            <property name="title">
+             <string>Spline Interpolation</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_3">
+             <item row="4" column="0" colspan="3">
+              <widget class="QRadioButton" name="button_InterpolationKochanek">
+               <property name="text">
+                <string>Kochanek </string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="4">
+              <widget class="QLabel" name="label_bias">
+               <property name="text">
+                <string>Bias</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="9">
+              <widget class="QDoubleSpinBox" name="doubleSpinBox_continuity">
+               <property name="minimum">
+                <double>-1.000000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>1.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.500000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="5">
+              <widget class="QDoubleSpinBox" name="doubleSpinBox_bias">
+               <property name="minimum">
+                <double>-1.000000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>1.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.500000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="10">
+              <spacer name="horizontalSpacer_3">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="4" column="7">
+              <widget class="QDoubleSpinBox" name="doubleSpinBox_tension">
+               <property name="minimum">
+                <double>-1.000000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>1.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.500000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="6">
+              <widget class="QLabel" name="label_tension">
+               <property name="text">
+                <string>Tension</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="8">
+              <widget class="QLabel" name="label_continuity">
+               <property name="text">
+                <string>Continuity</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="3">
+              <spacer name="horizontalSpacer">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeType">
+                <enum>QSizePolicy::Policy::Fixed</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>15</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="0" column="0">
+              <widget class="QRadioButton" name="button_InterpolationCardinal">
+               <property name="text">
+                <string>Cardinal</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0">
+              <widget class="QRadioButton" name="button_Interpolation_SCurve">
+               <property name="text">
+                <string>SCurve</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </widget>
           </item>
-          <item row="2" column="4">
-           <widget class="QLabel" name="label_offset">
-            <property name="text">
-             <string>Offset</string>
+          <item>
+           <widget class="QGroupBox" name="Tube">
+            <property name="title">
+             <string>Tube</string>
             </property>
+            <layout class="QGridLayout" name="gridLayout">
+             <item row="1" column="2">
+              <widget class="QLabel" name="label_tubeDiameter">
+               <property name="text">
+                <string>cm diameter</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QCheckBox" name="checkBox_tube">
+               <property name="text">
+                <string>activate</string>
+               </property>
+               <property name="checked">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QSpinBox" name="spinBox_tubeDiameter">
+               <property name="minimum">
+                <number>8</number>
+               </property>
+               <property name="maximum">
+                <number>12</number>
+               </property>
+               <property name="singleStep">
+                <number>1</number>
+               </property>
+               <property name="value">
+                <number>10</number>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="3">
+              <spacer name="horizontalSpacer_4">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
            </widget>
           </item>
-          <item row="2" column="5">
-           <widget class="QSpinBox" name="spinBox_offset">
-            <property name="minimum">
-             <number>1</number>
-            </property>
-            <property name="maximum">
-             <number>20</number>
-            </property>
-            <property name="value">
-             <number>1</number>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0" colspan="3">
-           <widget class="QRadioButton" name="button_Calculation1">
+          <item>
+           <widget class="QPushButton" name="button_performEndoscopeVisualization">
             <property name="text">
-             <string>3 x 2 parallel sensors (average position)</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="3">
-           <spacer name="horizontalSpacer_2">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="3" column="0">
-           <widget class="QRadioButton" name="button_Calculation3">
-            <property name="text">
-             <string>1 x 2 parallel sensors + 4 variable sensors (average of two splines)</string>
+             <string>Visualize</string>
             </property>
            </widget>
           </item>
@@ -124,193 +317,25 @@
         </widget>
        </item>
        <item>
-        <widget class="QGroupBox" name="InterpolationSelection">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
+        <widget class="QGroupBox" name="groupBox">
          <property name="title">
-          <string>Spline Interpolation</string>
+          <string>Virtual Endoscope Camera</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout_3">
-          <item row="4" column="0" colspan="3">
-           <widget class="QRadioButton" name="button_InterpolationKochanek">
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
+           <widget class="QCheckBox" name="ActivateSimulatedView">
             <property name="text">
-             <string>Kochanek </string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="4">
-           <widget class="QLabel" name="label_bias">
-            <property name="text">
-             <string>Bias</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="9">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_continuity">
-            <property name="minimum">
-             <double>-1.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>1.000000000000000</double>
-            </property>
-            <property name="singleStep">
-             <double>0.500000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="5">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_bias">
-            <property name="minimum">
-             <double>-1.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>1.000000000000000</double>
-            </property>
-            <property name="singleStep">
-             <double>0.500000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="10">
-           <spacer name="horizontalSpacer_3">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="4" column="7">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_tension">
-            <property name="minimum">
-             <double>-1.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>1.000000000000000</double>
-            </property>
-            <property name="singleStep">
-             <double>0.500000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="6">
-           <widget class="QLabel" name="label_tension">
-            <property name="text">
-             <string>Tension</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="8">
-           <widget class="QLabel" name="label_continuity">
-            <property name="text">
-             <string>Continuity</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="3">
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>15</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="0">
-           <widget class="QRadioButton" name="button_InterpolationCardinal">
-            <property name="text">
-             <string>Cardinal</string>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="0">
-           <widget class="QRadioButton" name="button_Interpolation_SCurve">
-            <property name="text">
-             <string>SCurve</string>
+             <string>activate / deactivate</string>
             </property>
            </widget>
           </item>
          </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="Tube">
-         <property name="title">
-          <string>Tube</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout">
-          <item row="1" column="2">
-           <widget class="QLabel" name="label_tubeDiameter">
-            <property name="text">
-             <string>cm diameter</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QCheckBox" name="checkBox_tube">
-            <property name="text">
-             <string>activate</string>
-            </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QSpinBox" name="spinBox_tubeDiameter">
-            <property name="minimum">
-             <number>8</number>
-            </property>
-            <property name="maximum">
-             <number>12</number>
-            </property>
-            <property name="singleStep">
-             <number>1</number>
-            </property>
-            <property name="value">
-             <number>10</number>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="3">
-           <spacer name="horizontalSpacer_4">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="button_performEndoscopeVisualization">
-         <property name="text">
-          <string>Visualize</string>
-         </property>
         </widget>
        </item>
        <item>
         <spacer name="verticalSpacer1">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -328,11 +353,11 @@
         <x>0</x>
         <y>0</y>
         <width>749</width>
-        <height>455</height>
+        <height>485</height>
        </rect>
       </property>
       <attribute name="label">
-       <string>Evaluation</string>
+       <string>Evaluation Extension</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
@@ -344,7 +369,7 @@
           <item row="1" column="3">
            <spacer name="horizontalSpacer_5">
             <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+             <enum>Qt::Orientation::Horizontal</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -389,17 +414,17 @@
           <string>Selection of Evaluation DataNode</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_6">
-          <item row="0" column="0">
-           <widget class="QRadioButton" name="radioButton_spline">
-            <property name="text">
-             <string>Spline</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="1">
            <widget class="QRadioButton" name="radioButton_tube">
             <property name="text">
              <string>Tube</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QRadioButton" name="radioButton_spline">
+            <property name="text">
+             <string>Spline</string>
             </property>
            </widget>
           </item>
@@ -423,159 +448,7 @@
        <item>
         <spacer name="verticalSpacer2">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="ToolBoxPage3">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>749</width>
-        <height>455</height>
-       </rect>
-      </property>
-      <attribute name="label">
-       <string>Camera View</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_8">
-       <item>
-        <widget class="QGroupBox" name="ViewDirectionBox">
-         <property name="title">
-          <string>Endoscope View Direction (in Tool Coordinates)</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_5">
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_5">
-            <item>
-             <widget class="QRadioButton" name="NeedleViewX">
-              <property name="text">
-               <string>X</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QRadioButton" name="NeedleViewY">
-              <property name="text">
-               <string>Y</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QRadioButton" name="NeedleViewZ">
-              <property name="text">
-               <string>Z</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer_6">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="NeedleViewInvert">
-            <property name="text">
-             <string>Invert</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="ViewUpBox">
-         <property name="title">
-          <string>Endoscope Up Vector (in Tool Coordinates)</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_7">
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_6">
-            <item>
-             <widget class="QRadioButton" name="NeedleUpX">
-              <property name="text">
-               <string>X</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QRadioButton" name="NeedleUpY">
-              <property name="text">
-               <string>Y</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QRadioButton" name="NeedleUpZ">
-              <property name="text">
-               <string>Z</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer_7">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="NeedleUpInvert">
-            <property name="text">
-             <string>Invert</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="ActivateSimulatedView">
-         <property name="text">
-          <string>Activate simulated endoscopic view</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QWidget" name="CamWidget" native="true"/>
-       </item>
-       <item>
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>

@@ -157,12 +157,10 @@ protected:
 
 
   //CameraView
-  vtkRenderer *newVtkRenderer;
+  bool CameraView;
   mitk::NavigationData::Pointer node1 = mitk::NavigationData::New();
   void VirtualCamera(bool on);
-  mitk::CameraVisualization::Pointer VirtualView;
-  bool CameraView;
-
+  void UpdateCamera();
 
 };
 

@@ -83,13 +83,14 @@ See LICENSE.txt or http://www.mitk.org for details.
 #include <vtkCellLocator.h>
 #include <vtkPolyData.h>
 #include <vtkMath.h>
+#include <vtkCamera.h>
 
 
 const std::string EndoscopeVisualization::VIEW_ID = "org.mitk.views.endoscopevisualization";
 
 
 EndoscopeVisualization::EndoscopeVisualization()
-  : QmitkAbstractView(), m_Source(nullptr), CameraView(false), VirtualView(nullptr)
+  : QmitkAbstractView(), m_Source(nullptr), CameraView(false)
 
 {}
 
@@ -156,7 +157,7 @@ void EndoscopeVisualization::VisualizeEndoscope()
     return;
   }
 
-  m_Timer->start(100);  
+  m_Timer->start(50);  
 }
 
 
@@ -274,7 +275,7 @@ void EndoscopeVisualization::UpdateTrackingData()
 
   spline = PerformInterpolation(points, m_selectedInterpolationType);
 
-  VisualizePoints();
+  //VisualizePoints();
 
   VisualizeSpline();
 
@@ -298,11 +299,10 @@ void EndoscopeVisualization::UpdateTrackingData()
       m_RecordedPointSet->InsertPoint(size, nd->GetPosition());
   }
 
-  if (CameraView && VirtualView.IsNotNull())
+  if (CameraView)
   {
     node1 = CalculateMidpointAndOrientation(m_NavigationDataList[0], m_NavigationDataList[1]);
-    VirtualView->SetInput(node1);
-    VirtualView->Update();
+    UpdateCamera();
   }
 
 }
@@ -417,43 +417,66 @@ mitk::NavigationData::Pointer EndoscopeVisualization::CalculateMidpointAndOrient
   vtkQuaternion<double> vtkQuat1(orientation1.r(), orientation1.x(), orientation1.y(), orientation1.z());
   vtkQuaternion<double> vtkQuat2(orientation2.r(), orientation2.x(), orientation2.y(), orientation2.z());
 
-
   mitk::NavigationData::Pointer newsensor = mitk::NavigationData::New();
 
-  // Position imaginary 6DOF sensor 
+  // Position imaginary 6DOF sensor
 
   mitk::Point3D midpoint;
   midpoint[0] = (position1[0] + position2[0]) / 2.0;
   midpoint[1] = (position1[1] + position2[1]) / 2.0;
   midpoint[2] = (position1[2] + position2[2]) / 2.0;
-  
+
   newsensor->SetPosition(midpoint);
 
-  //Orientnation imaginary 6DOF sensor 
-
+  // Orientnation imaginary 6DOF sensor
+  vtkQuat1.Normalize();
+  vtkQuat2.Normalize();
   vtkQuaternion<double> vtkMidOri = vtkQuat1.Slerp(0.5, vtkQuat2);
+  vtkMidOri.Normalize();
 
-  double dx = position2[0] - position1[0];
-  double dy = position2[1] - position1[1];
+  mitk::Quaternion MidOri(vtkMidOri.GetX(), vtkMidOri.GetY(), vtkMidOri.GetZ(), vtkMidOri.GetW());
+
+  vtkQuaternion<double> pointQuat1(0, position1[0], position1[1], position1[2]);
+  vtkQuaternion<double> pointQuat2(0, position2[0], position2[1], position2[2]);
+  vtkQuaternion<double> pos1local = vtkMidOri * pointQuat1;
+  vtkQuaternion<double> pos2local = vtkMidOri * pointQuat2;
+  vtkQuaternion<double> v = pos2local - pos1local;
+
+  double dx = v[0];
+  double dy = -v[2];
   double yaw_m = std::atan2(dy, dx);
 
+  double epsilon = 1e-6;
+  if (std::abs(yaw_m) < epsilon)
+  {
+    yaw_m = 0.0;
+  }
+
   double halfYaw = yaw_m / 2.0;
-  vtkQuaternion<double> vtkYaw(cos(halfYaw), 0, 0, sin(halfYaw));
+
+  vtkQuaternion<double> zAxis(0, 1, 0, 0);
+  vtkQuaternion<double> rotationaxis = vtkMidOri * zAxis;
+  rotationaxis.Normalize();
+
+  if (rotationaxis[0] == 0.0 && rotationaxis[1] == 0.0 && rotationaxis[2] == 0.0)
+  {
+    rotationaxis = vtkQuaternion<double>(0, 0, 1, 0);
+  }
+
+
+  vtkQuaternion<double> vtkYaw(cos(halfYaw), sin(halfYaw) * rotationaxis[0], sin(halfYaw) * rotationaxis[1], sin(halfYaw) * rotationaxis[2]);
+
+  vtkYaw.Normalize();
 
   vtkQuaternion<double> combined = vtkMidOri * vtkYaw;
-  
-  double angleini = vtkMidOri.GetW();
-  double xini = vtkMidOri.GetX();
-  double yini = vtkMidOri.GetY();
-  double zini = vtkMidOri.GetZ();
 
-  mitk::Quaternion MidOri(xini, yini, zini, angleini);
+  combined.Normalize();
 
   double r = combined.GetW();
   double x = combined.GetX();
   double yin = combined.GetY();
   double zin = combined.GetZ();
- 
+
   mitk::Quaternion finalOrientation(x, yin, zin, r);
 
   newsensor->SetOrientation(finalOrientation);
@@ -917,51 +940,59 @@ void EndoscopeVisualization::VirtualCamera(bool on)
 {
   if (on)
   {
-      
-      node1 = CalculateMidpointAndOrientation(m_NavigationDataList[0], m_NavigationDataList[1]);
-
-      if (!VirtualView)
-      {
-        VirtualView = mitk::CameraVisualization::New();
-      }
-
-      VirtualView->SetInput(node1);
-
-      mitk::Vector3D viewDirection;
-      viewDirection[0] = (int)(m_Controls.NeedleViewX->isChecked());
-      viewDirection[1] = (int)(m_Controls.NeedleViewY->isChecked());
-      viewDirection[2] = (int)(m_Controls.NeedleViewZ->isChecked());
-      if (m_Controls.NeedleUpInvert->isChecked())
-        viewDirection *= -1;
-      VirtualView->SetDirectionOfProjectionInToolCoordinates(viewDirection);
-
-      mitk::Vector3D viewUpVector;
-      viewUpVector[0] = (int)(m_Controls.NeedleUpX->isChecked());
-      viewUpVector[1] = (int)(m_Controls.NeedleUpY->isChecked());
-      viewUpVector[2] = (int)(m_Controls.NeedleUpZ->isChecked());
-      if (m_Controls.NeedleUpInvert->isChecked())
-        viewUpVector *= -1;
-      VirtualView->SetViewUpInToolCoordinates(viewUpVector);
-
-
-       mitk::BaseRenderer::Pointer renderer =
-        this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer();; 
-
-      VirtualView->SetRenderer(renderer);
-
-      CameraView = true;
-      m_Controls.ViewDirectionBox->setEnabled(false);
-      m_Controls.ViewUpBox->setEnabled(false);
-
+    CameraView = true;
   }
   else
   {
-    VirtualView = nullptr;
     CameraView = false;
-
-    m_Controls.ViewDirectionBox->setEnabled(true);
-    m_Controls.ViewUpBox->setEnabled(true);
   }
 }
 
 
+void EndoscopeVisualization::UpdateCamera() 
+{
+  vtkSmartPointer<vtkRenderer> vtkrenderer =
+    this->GetRenderWindowPart(mitk::WorkbenchUtil::OPEN)->GetQmitkRenderWindow("3d")->GetRenderer()->GetVtkRenderer();
+
+  vtkSmartPointer<vtkCamera> cam = vtkSmartPointer<vtkCamera>::New();
+  cam = vtkrenderer->GetActiveCamera();
+
+  mitk::Point3D position = node1->GetPosition();
+  mitk::Quaternion orientation = node1->GetOrientation();
+
+  cam->SetPosition(position[0], position[1], position[2]);
+
+  orientation.normalize();
+
+  itk::Matrix<double, 3, 3> rotationMatrix;
+  rotationMatrix = orientation.rotation_matrix_transpose().transpose();
+
+  itk::Vector<double, 3> z;
+  z[0] = 0.0;
+  z[1] = 0.0;
+  z[2] = -1.0;
+
+  itk::Vector<double, 3> zAxisLocal = rotationMatrix * z;
+
+  zAxisLocal = -zAxisLocal;
+
+  mitk::Point3D focalPoint;
+  focalPoint[0] = position[0] + zAxisLocal[0];
+  focalPoint[1] = position[1] + zAxisLocal[1];
+  focalPoint[2] = position[2] + zAxisLocal[2];
+
+  cam->SetFocalPoint(focalPoint[0], focalPoint[1], focalPoint[2]);
+
+  itk::Vector<double, 3> y;
+  z[0] = 0.0;
+  z[1] = 1.0;
+  z[2] = 0.0;
+
+  itk::Vector<double, 3> yAxisLocal = rotationMatrix * y;
+
+  yAxisLocal = -yAxisLocal;
+
+  cam->SetViewUp(yAxisLocal[0], yAxisLocal[1], yAxisLocal[2]);
+
+  vtkrenderer->GetRenderWindow()->Render();
+}
