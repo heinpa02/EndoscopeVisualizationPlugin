@@ -240,22 +240,12 @@ void EndoscopeVisualization::SetupNavigation()
 void EndoscopeVisualization::UpdateTrackingData()
 {
   m_NavigationDataList.clear();
-  if (m_Controls.widget->GetSelectedToolID() < 6)
-  {
-    for (size_t i = 0; i <= m_Controls.widget->GetSelectedToolID(); ++i)
-    {
-      mitk::NavigationData::Pointer m_NavigationDataSensor;
-      m_NavigationDataSensor = m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(i);
-      m_NavigationDataList.push_back(m_NavigationDataSensor);
-    }
-  }
-  else
-  {
+ 
     mitk::NavigationData::Pointer m_NavigationDataSensor0 =
       m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(0);
     m_NavigationDataList.push_back(m_NavigationDataSensor0);
     mitk::NavigationData::Pointer m_NavigationDataSensor1 =
-      m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(1);
+      m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(3);
     m_NavigationDataList.push_back(m_NavigationDataSensor1);
     mitk::NavigationData::Pointer m_NavigationDataSensor2 =
       m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(2);
@@ -264,18 +254,16 @@ void EndoscopeVisualization::UpdateTrackingData()
       m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(4);
     m_NavigationDataList.push_back(m_NavigationDataSensor3);
     mitk::NavigationData::Pointer m_NavigationDataSensor4 =
-      m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(5);
+      m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(1);
     m_NavigationDataList.push_back(m_NavigationDataSensor4);
     mitk::NavigationData::Pointer m_NavigationDataSensor5 =
-      m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(6);
+      m_Controls.widget->GetSelectedNavigationDataSource()->GetOutput(5);
     m_NavigationDataList.push_back(m_NavigationDataSensor5);
-  }
+ 
 
   PerformCalculation(m_selectedCalculationType);
 
   spline = PerformInterpolation(points, m_selectedInterpolationType);
-
-  //VisualizePoints();
 
   VisualizeSpline();
 
@@ -315,6 +303,7 @@ void EndoscopeVisualization::PerformCalculation(int calculationType)
   m_NodeList.clear();
   points = vtkSmartPointer<vtkPoints>::New();
   functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
+  VisualizePoints();
 
   switch (calculationType)
   {
@@ -436,15 +425,23 @@ mitk::NavigationData::Pointer EndoscopeVisualization::CalculateMidpointAndOrient
 
   mitk::Quaternion MidOri(vtkMidOri.GetX(), vtkMidOri.GetY(), vtkMidOri.GetZ(), vtkMidOri.GetW());
 
+  vtkQuaternion<double> posi(0, midpoint[0], midpoint[1], midpoint[2]);
   vtkQuaternion<double> pointQuat1(0, position1[0], position1[1], position1[2]);
   vtkQuaternion<double> pointQuat2(0, position2[0], position2[1], position2[2]);
+  vtkQuaternion<double> poslocal = vtkMidOri * posi;
   vtkQuaternion<double> pos1local = vtkMidOri * pointQuat1;
   vtkQuaternion<double> pos2local = vtkMidOri * pointQuat2;
   vtkQuaternion<double> v = pos2local - pos1local;
 
-  double dx = v[0];
-  double dy = -v[2];
-  double yaw_m = std::atan2(dy, dx);
+  vtkQuaternion<double> v1 = pos1local - posi;
+  vtkQuaternion<double> v2 = pos2local - posi;
+
+  double yaw_test = std::acos((v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2])/(sqrt(v1[0]*v1[0]+v1[1]*v1[1]+v1[2]*v1[2])*sqrt(v2[0]*v2[0]+v2[1]*v2[1]+v2[2]*v2[2])));
+ 
+  //double dx = v[0];
+  //double dy = -v[2];
+  //double yaw_m = std::atan2(dy, dx);
+  double yaw_m = yaw_test;
 
   double epsilon = 1e-6;
   if (std::abs(yaw_m) < epsilon)
@@ -591,6 +588,7 @@ void EndoscopeVisualization::PerformCalculation4() {
   {
     mitk::Point3D position = m_NavigationDataList[i]->GetPosition();
     mitk::Quaternion orientation = m_NavigationDataList[i]->GetOrientation();
+
 
     if (i % 2 == 0)
     {
@@ -819,7 +817,7 @@ void EndoscopeVisualization::VisualizeTube()
     tubeNode = mitk::DataNode::New();
     tubeNode->SetName("Tube");
     tubeNode->GetPropertyList()->SetProperty("color", mitk::ColorProperty::New(1, 1, 1));
-    tubeNode->GetPropertyList()->SetProperty("opacity", mitk::FloatProperty::New(0.5));
+    tubeNode->GetPropertyList()->SetProperty("opacity", mitk::FloatProperty::New(0.8));
     datastorage->Add(tubeNode);
   }
 
